@@ -1,15 +1,29 @@
 import { Underline } from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
-import { Button, message } from 'antd';
-import { useCallback, useState } from "react";
+import { Button, message } from "antd";
+import { useCallback, useState, useEffect } from "react";
 import { MdFormatListBulleted } from "react-icons/md";
 import { VscListOrdered } from "react-icons/vsc";
+import {
+  useGetPoliciesQuery,
+  useUpdatePoliciesMutation,
+} from "../../features/Rule/ruleApi";
 
 const FreeLancherTermCondition = () => {
   const [description, setDescription] = useState("<p></p>");
   const [wordCount, setWordCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const { data: policies } = useGetPoliciesQuery();
+  const [updatePolicies, { isLoading: updateLoading }] =
+    useUpdatePoliciesMutation();
+
+  // Load termsOfService data when component mounts
+  useEffect(() => {
+    if (policies?.data?.termsOfService) {
+      setDescription(policies.data.termsOfService);
+    }
+  }, [policies]);
 
   // Utility function to count words
   const countWords = useCallback((html) => {
@@ -36,16 +50,28 @@ const FreeLancherTermCondition = () => {
     return words.slice(0, 1000).join(" ") + "... [content truncated]";
   }, []);
 
-  // Handle save button click (demo version)
+  // Handle save button click
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      message.success("Terms and conditions saved successfully!");
+      const result = await updatePolicies({
+        termsOfService: description,
+      }).unwrap();
+
+      if (result.success) {
+        message.success(
+          result.message || "Terms and conditions saved successfully!"
+        );
+      } else {
+        message.error(result.message || "Failed to save terms and conditions");
+      }
     } catch (err) {
-      message.error("Failed to save terms and conditions");
       console.error("Save error:", err);
+      message.error(
+        err?.data?.message ||
+          err?.message ||
+          "Failed to save terms and conditions"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -80,7 +106,9 @@ const FreeLancherTermCondition = () => {
         editor.commands.setContent(truncatedHtml);
         setWordCount(1000);
         setDescription(truncatedHtml);
-        message.warning("Word limit of 1000 exceeded. Content has been truncated.");
+        message.warning(
+          "Word limit of 1000 exceeded. Content has been truncated."
+        );
       } else {
         setDescription(html);
         setWordCount(words);
@@ -101,7 +129,8 @@ const FreeLancherTermCondition = () => {
           if (currentWordCount + pastedWordCount > 1000) {
             event.preventDefault();
             message.warning(
-              `Pasting this content would exceed the 1000 word limit. You have ${1000 - currentWordCount
+              `Pasting this content would exceed the 1000 word limit. You have ${
+                1000 - currentWordCount
               } words remaining.`
             );
             return true;
@@ -112,16 +141,30 @@ const FreeLancherTermCondition = () => {
     },
   });
 
+  // Update editor content when description changes (after editor is initialized)
+  useEffect(() => {
+    if (editor && description && description !== "<p></p>") {
+      editor.commands.setContent(description);
+      const words = countWords(description);
+      setWordCount(words);
+    }
+  }, [editor, description, countWords]);
+
   return (
-    <div className="w-full mt-5">
+    <div className="w-full mt-5 ">
       <div className="rounded-xl shadow-lg border-2 overflow-hidden bg-white border-gray-200">
         <div className="py-4 sm:p-6 bg-gray-50">
           <div className="mb-6 sm:mb-8">
             <div className="flex justify-between items-center mb-2">
-              <div className={`text-sm font-medium ${wordCount > 900 ? "text-red-500" :
-                wordCount > 800 ? "text-yellow-500" :
-                  "text-gray-600"
-                }`}>
+              <div
+                className={`text-sm font-medium ${
+                  wordCount > 900
+                    ? "text-red-500"
+                    : wordCount > 800
+                    ? "text-yellow-500"
+                    : "text-gray-600"
+                }`}
+              >
                 {wordCount}/1000 words
               </div>
             </div>
@@ -132,40 +175,61 @@ const FreeLancherTermCondition = () => {
                 <button
                   type="button"
                   onClick={() => editor?.chain().focus().toggleBold().run()}
-                  className={`px-4 py-2 cursor-pointer rounded ${editor?.isActive("bold") ? "bg-blue-700 text-white" : "hover:bg-gray-200"
-                    }`}
+                  className={`px-4 py-2 cursor-pointer rounded ${
+                    editor?.isActive("bold")
+                      ? "bg-blue-700 text-white"
+                      : "hover:bg-gray-200"
+                  }`}
                 >
                   <strong>B</strong>
                 </button>
                 <button
                   type="button"
                   onClick={() => editor?.chain().focus().toggleItalic().run()}
-                  className={`px-[18px] py-2 cursor-pointer rounded ${editor?.isActive("italic") ? "bg-blue-700 text-white" : "hover:bg-gray-200"
-                    }`}
+                  className={`px-[18px] py-2 cursor-pointer rounded ${
+                    editor?.isActive("italic")
+                      ? "bg-blue-700 text-white"
+                      : "hover:bg-gray-200"
+                  }`}
                 >
                   <em>I</em>
                 </button>
                 <button
                   type="button"
-                  onClick={() => editor?.chain().focus().toggleUnderline().run()}
-                  className={`px-4 py-2 cursor-pointer rounded ${editor?.isActive("underline") ? "bg-blue-700 text-white" : "hover:bg-gray-200"
-                    }`}
+                  onClick={() =>
+                    editor?.chain().focus().toggleUnderline().run()
+                  }
+                  className={`px-4 py-2 cursor-pointer rounded ${
+                    editor?.isActive("underline")
+                      ? "bg-blue-700 text-white"
+                      : "hover:bg-gray-200"
+                  }`}
                 >
                   <u>U</u>
                 </button>
                 <button
                   type="button"
-                  onClick={() => editor?.chain().focus().toggleBulletList().run()}
-                  className={`px-3 py-2 cursor-pointer rounded ${editor?.isActive("bulletList") ? "bg-blue-700 text-white" : "hover:bg-gray-200"
-                    }`}
+                  onClick={() =>
+                    editor?.chain().focus().toggleBulletList().run()
+                  }
+                  className={`px-3 py-2 cursor-pointer rounded ${
+                    editor?.isActive("bulletList")
+                      ? "bg-blue-700 text-white"
+                      : "hover:bg-gray-200"
+                  }`}
                 >
                   <MdFormatListBulleted size={20} />
                 </button>
                 <button
                   type="button"
-                  onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-                  className={`px-3 py-2 cursor-pointer rounded ${editor?.isActive("orderedList") ? "bg-blue-700 text-white" : "hover:bg-gray-200"
-                    }`}
+                  onClick={() =>
+                    editor?.chain().focus().toggleOrderedList().run()
+                  }
+                  className={`px-3 py-2 cursor-pointer rounded ${
+                    editor?.isActive("orderedList")
+                      ? "bg-blue-700 text-white"
+                      : "hover:bg-gray-200"
+                  }`}
                 >
                   <VscListOrdered size={20} />
                 </button>
@@ -179,7 +243,7 @@ const FreeLancherTermCondition = () => {
           <Button
             type="primary"
             onClick={handleSave}
-            loading={isSaving}
+            loading={isSaving || updateLoading}
           >
             Save Terms and conditions
           </Button>
