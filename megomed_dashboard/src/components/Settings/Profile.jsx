@@ -2,25 +2,26 @@ import { EditOutlined, SaveOutlined } from "@ant-design/icons";
 import { Button, Input, Upload, message } from "antd";
 import { useEffect, useState } from "react";
 import { MdEdit } from "react-icons/md";
-import { useProfileQuery } from "../../features/profile/profileApi";
 import {
-  useGetProfileSettingsQuery,
-  useUpdateProfileSettingsMutation,
-} from "../../features/settings/settingApi";
+  useProfileQuery,
+  useUpdateProfileMutation,
+} from "../../features/profile/profileApi";
+
 import { baseURL } from "../../utils/BaseURL";
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [updateProfile, { isLoading: updateLoading }] =
-    useUpdateProfileSettingsMutation();
-  const { data, isLoading } = useGetProfileSettingsQuery();
+    useUpdateProfileMutation();
+
   const { data: profiles, refetch } = useProfileQuery();
 
   // Initialize profile state
   const [profile, setProfile] = useState({
-    name: "",
+    fullName: "",
     email: "",
-    contact: "", // Changed from phone to contact to match API
+    phone: "",
+    address: "",
   });
 
   const [profileImageFile, setProfileImageFile] = useState(null);
@@ -30,24 +31,25 @@ const Profile = () => {
 
   // Initialize profile state when data is fetched
   useEffect(() => {
-    if (data?.data) {
+    if (profiles?.data) {
       setProfile({
-        name: data.data.name || "",
-        email: data.data.email || "",
-        contact: data.data.contact || "", // Using contact field
+        fullName: profiles.data.fullName || "",
+        email: profiles.data.email || "",
+        phone: profiles.data.phone || "",
+        address: profiles.data.address || "",
       });
 
       // Set profile image - only prepend baseURL if it's not already a full URL or data URL
-      const imageUrl = data.data.image
-        ? data.data.image.startsWith("http") ||
-          data.data.image.startsWith("data:image")
-          ? data.data.image
-          : `${baseURL}${data.data.image}`
+      const imageUrl = profiles.data.profile
+        ? profiles.data.profile.startsWith("http") ||
+          profiles.data.profile.startsWith("data:image")
+          ? profiles.data.profile
+          : `${baseURL}${profiles.data.profile}`
         : "https://i.ibb.co.com/fYrFP06M/images-1.png";
 
       setPreviewImage(imageUrl);
     }
-  }, [data]);
+  }, [profiles]);
 
   const handleFileChange = ({ file }) => {
     if (!isEditing) return;
@@ -68,36 +70,40 @@ const Profile = () => {
   const handleSave = async () => {
     const phonePattern = /^[0-9]{10,15}$/;
 
-    if (!profile.contact) {
-      message.error("Contact number is required");
+    if (!profile.phone) {
+      message.error("Phone number is required");
       return;
     }
 
-    if (!phonePattern.test(profile.contact)) {
-      message.error("Please enter a valid contact number");
+    if (!phonePattern.test(profile.phone)) {
+      message.error("Please enter a valid phone number");
       return;
     }
 
     const formData = new FormData();
 
-    // Add the profile data
-    formData.append("name", profile.name);
-    formData.append("contact", profile.contact);
+    // Add the profile data as per API requirements
+    formData.append("fullName", profile.fullName);
+    formData.append("phone", profile.phone);
+    formData.append("address", profile.address);
 
     // Add image if selected
     if (profileImageFile) {
-      formData.append("image", profileImageFile);
+      formData.append("profile", profileImageFile);
     }
 
     try {
-      await updateProfile(formData).unwrap();
+      const result = await updateProfile(formData).unwrap();
 
-      // Refetch the user profile data to get the updated information
-      refetch();
-
-      message.success("Profile updated successfully");
-      setIsEditing(false);
-      setProfileImageFile(null); // Reset the file state after successful update
+      if (result.success) {
+        // Refetch the user profile data to get the updated information
+        refetch();
+        message.success(result.message || "Profile updated successfully");
+        setIsEditing(false);
+        setProfileImageFile(null); // Reset the file state after successful update
+      } else {
+        message.error(result.message || "Failed to update profile");
+      }
     } catch (error) {
       console.error("API Error:", error);
       message.error(
@@ -108,17 +114,18 @@ const Profile = () => {
 
   const handleCancel = () => {
     // Reset form to original data
-    if (data?.data) {
+    if (profiles?.data) {
       setProfile({
-        name: data.data.name || "",
-        email: data.data.email || "",
-        contact: data.data.contact || "",
+        fullName: profiles.data.fullName || "",
+        email: profiles.data.email || "",
+        phone: profiles.data.phone || "",
+        address: profiles.data.address || "",
       });
-      const imageUrl = data.data.image
-        ? data.data.image.startsWith("http") ||
-          data.data.image.startsWith("data:image")
-          ? data.data.image
-          : `${baseURL}${data.data.image}`
+      const imageUrl = profiles.data.profile
+        ? profiles.data.profile.startsWith("http") ||
+          profiles.data.profile.startsWith("data:image")
+          ? profiles.data.profile
+          : `${baseURL}${profiles.data.profile}`
         : "https://i.ibb.co.com/fYrFP06M/images-1.png";
 
       setPreviewImage(imageUrl);
@@ -127,7 +134,7 @@ const Profile = () => {
     setIsEditing(false);
   };
 
-  if (isLoading) {
+  if (profiles?.isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -162,7 +169,7 @@ const Profile = () => {
               )}
             </div>
             <h2 className="text-4xl font-semibold text-gray-800">
-              {profile.name || "User"}
+              {profile.fullName || "User"}
             </h2>
           </div>
           <Button
@@ -179,8 +186,8 @@ const Profile = () => {
           <div>
             <label className="block text-gray-600 mb-1">Full Name</label>
             <Input
-              name="name"
-              value={profile.name}
+              name="fullName"
+              value={profile.fullName}
               onChange={handleChange}
               disabled={!isEditing}
               className="border rounded-lg border-primary p-2 h-[44px]"
@@ -201,14 +208,26 @@ const Profile = () => {
           </div>
 
           <div>
-            <label className="block text-gray-600 mb-1">Contact Number</label>
+            <label className="block text-gray-600 mb-1">Phone Number</label>
             <Input
-              name="contact"
-              value={profile.contact}
+              name="phone"
+              value={profile.phone}
               onChange={handleChange}
               disabled={!isEditing}
               className="border rounded-lg border-primary p-2 h-[44px]"
-              placeholder="Enter your contact number"
+              placeholder="Enter your phone number"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-600 mb-1">Address</label>
+            <Input
+              name="address"
+              value={profile.address}
+              onChange={handleChange}
+              disabled={!isEditing}
+              className="border rounded-lg border-primary p-2 h-[44px]"
+              placeholder="Enter your address"
             />
           </div>
         </div>

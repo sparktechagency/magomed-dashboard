@@ -3,13 +3,13 @@ import { baseApi } from "../../apiBaseQuery";
 export const offerApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     profile: builder.query({
-      query: () => "/user/profile",
+      query: () => "/users/my-profile",
       providesTags: ["profie"],
     }),
 
     updateProfile: builder.mutation({
       query: (data) => ({
-        url: "/user/profile",
+        url: "/users/update-my-profile",
         method: "PATCH",
         body: data,
       }),
