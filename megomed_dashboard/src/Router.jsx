@@ -2,10 +2,10 @@
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 
 // Layout & Pages
-import DeletePage from './components/delete-page/DeletePage';
-import ProjectManagement from './components/ProjectManagement/ProjectManagement';
+import DeletePage from "./components/delete-page/DeletePage";
+import ProjectManagement from "./components/ProjectManagement/ProjectManagement";
 import Settings from "./components/Settings/Settings";
-import SubscriptionManagement from './components/Subscription/SubscriptionManagement';
+import SubscriptionManagement from "./components/Subscription/SubscriptionManagement";
 import Layout from "./layouts/Layout";
 import CheckEmail from "./pages/auth/CheckEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -13,7 +13,7 @@ import SetPassword from "./pages/auth/SetPassword";
 import Login from "./pages/auth/SignIn";
 import SuccessReset from "./pages/auth/SucessReset";
 import Verify from "./pages/auth/Verify_user";
-import Chats from './pages/chats/Chats';
+import Chats from "./pages/chats/Chats";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Earning from "./pages/earning/Earning";
 import NotFound from "./pages/NotFound";
@@ -21,7 +21,6 @@ import Notification from "./pages/Notification";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import UserManagement from "./pages/UserManagement/UserManagement";
-import UserProfile from "./pages/UserProfile";
 
 const Routers = () => {
   return (
@@ -31,7 +30,10 @@ const Routers = () => {
         <Route path="/auth/login" element={<Login />} />
         <Route path="/auth/success" element={<SuccessReset />} />
         <Route path="/auth/signup/verify" element={<Verify />} />
-        <Route path="/auth/login/forgot_password" element={<ForgotPassword />} />
+        <Route
+          path="/auth/login/forgot_password"
+          element={<ForgotPassword />}
+        />
         <Route path="/auth/login/check_email" element={<CheckEmail />} />
         <Route path="/auth/login/set_password" element={<SetPassword />} />
         <Route path="/delete-account" element={<DeletePage />} />
@@ -48,11 +50,9 @@ const Routers = () => {
           <Route path="settings" element={<Settings />} />
           <Route path="subscription" element={<SubscriptionManagement />} />
           <Route path="earning" element={<Earning />} />
-          <Route path="profile" element={<UserProfile />} />
           <Route path="notification" element={<Notification />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} />
           <Route path="terms-conditions" element={<TermsConditions />} />
-
         </Route>
 
         {/* 404 fallback */}

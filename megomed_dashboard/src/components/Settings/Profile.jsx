@@ -2,14 +2,18 @@ import { EditOutlined, SaveOutlined } from "@ant-design/icons";
 import { Button, Input, Upload, message } from "antd";
 import { useEffect, useState } from "react";
 import { MdEdit } from "react-icons/md";
-import { useProfileQuery } from '../../features/profile/profileApi';
-import { useGetProfileSettingsQuery, useUpdateProfileSettingsMutation } from '../../features/settings/settingApi';
-import { baseURL } from '../../utils/BaseURL';
+import { useProfileQuery } from "../../features/profile/profileApi";
+import {
+  useGetProfileSettingsQuery,
+  useUpdateProfileSettingsMutation,
+} from "../../features/settings/settingApi";
+import { baseURL } from "../../utils/BaseURL";
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
-  const [updateProfile, { isLoading: updateLoading }] = useUpdateProfileSettingsMutation();
-  const { data, isLoading, } = useGetProfileSettingsQuery();
+  const [updateProfile, { isLoading: updateLoading }] =
+    useUpdateProfileSettingsMutation();
+  const { data, isLoading } = useGetProfileSettingsQuery();
   const { data: profiles, refetch } = useProfileQuery();
 
   // Initialize profile state
@@ -35,7 +39,8 @@ const Profile = () => {
 
       // Set profile image - only prepend baseURL if it's not already a full URL or data URL
       const imageUrl = data.data.image
-        ? data.data.image.startsWith('http') || data.data.image.startsWith('data:image')
+        ? data.data.image.startsWith("http") ||
+          data.data.image.startsWith("data:image")
           ? data.data.image
           : `${baseURL}${data.data.image}`
         : "https://i.ibb.co.com/fYrFP06M/images-1.png";
@@ -87,7 +92,6 @@ const Profile = () => {
     try {
       await updateProfile(formData).unwrap();
 
-
       // Refetch the user profile data to get the updated information
       refetch();
 
@@ -96,7 +100,9 @@ const Profile = () => {
       setProfileImageFile(null); // Reset the file state after successful update
     } catch (error) {
       console.error("API Error:", error);
-      message.error(error?.data?.message || error?.message || "Error updating profile");
+      message.error(
+        error?.data?.message || error?.message || "Error updating profile"
+      );
     }
   };
 
@@ -109,7 +115,8 @@ const Profile = () => {
         contact: data.data.contact || "",
       });
       const imageUrl = data.data.image
-        ? data.data.image.startsWith('http') || data.data.image.startsWith('data:image')
+        ? data.data.image.startsWith("http") ||
+          data.data.image.startsWith("data:image")
           ? data.data.image
           : `${baseURL}${data.data.image}`
         : "https://i.ibb.co.com/fYrFP06M/images-1.png";
@@ -144,7 +151,11 @@ const Profile = () => {
 
               {isEditing && (
                 <div className="absolute flex items-center justify-center w-8 h-8 p-2 text-center rounded-full cursor-pointer bg-[#FF991C] bottom-1 right-5">
-                  <Upload showUploadList={false} onChange={handleFileChange} accept="image/*">
+                  <Upload
+                    showUploadList={false}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                  >
                     <MdEdit className="mt-1 text-xl text-white" />
                   </Upload>
                 </div>
