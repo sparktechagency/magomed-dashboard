@@ -1,17 +1,16 @@
 import { lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 const Revenue = lazy(() => import("../../components/dashboard/Revenue"));
-
 
 import { Skeleton } from "antd";
 import AdminStatistics from "../../components/dashboard/AdminStatistics";
 
-import ActiveProduct from '../../components/dashboard/ActiveProduct';
-import DeliveryAcceptedChart from '../../components/dashboard/DeliveryAcceptedChart';
-import FreelancersWorldMap from '../../components/dashboard/FreelancersWorldMap';
-import WeeklyEarnings from '../../components/dashboard/WicklyEarning';
+import ActiveProduct from "../../components/dashboard/ActiveProduct";
+import DeliveryAcceptedChart from "../../components/dashboard/DeliveryAcceptedChart";
+import FreelancersWorldMap from "../../components/dashboard/FreelancersWorldMap";
+import WorldMap from "../WorldMap/WorldMap";
+import WeeklyEarnings from "../../components/dashboard/WicklyEarning";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -54,12 +53,8 @@ const Dashboard = () => {
     },
   ];
 
-
-
-
   return (
     <div className="flex flex-col gap-10">
-
       {/* Revenue and CustomerMap */}
       <div className="flex items-center justify-between gap-10">
         <div className="w-full">
@@ -78,23 +73,22 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className='flex items-center justify-between gap-10'>
+      <div className="flex items-center justify-between gap-10">
         <div className="w-8/12 ">
           <Suspense fallback={<Skeleton active />}>
             <Revenue />
           </Suspense>
         </div>
 
-        <div className='w-4/12'>
+        <div className="w-4/12">
           <ActiveProduct />
         </div>
       </div>
 
-      <div className='flex gap-5'>
+      <div className="flex gap-5">
         <FreelancersWorldMap title={"Freelancers Region"} />
-        <FreelancersWorldMap title={"Clients Region"} />
+        <WorldMap title={"Clients Region"} />
       </div>
-
     </div>
   );
 };

@@ -21,6 +21,7 @@ import Notification from "./pages/Notification";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import UserManagement from "./pages/UserManagement/UserManagement";
+import WorldMap from "./pages/WorldMap/WorldMap";
 
 const Routers = () => {
   return (
