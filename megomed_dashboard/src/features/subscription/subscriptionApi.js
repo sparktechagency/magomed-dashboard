@@ -4,7 +4,7 @@ export const subscriptionApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createSubscription: builder.mutation({
       query: (data) => ({
-        url: `/package/packages`,
+        url: `/package/create-package`,
         method: "POST",
         body: data,
       }),
@@ -13,7 +13,7 @@ export const subscriptionApi = baseApi.injectEndpoints({
 
     updateSubscription: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/package/packages/${id}`,
+        url: `/package/${id}`,
         method: "PATCH",
         body: data,
       }),
@@ -30,7 +30,7 @@ export const subscriptionApi = baseApi.injectEndpoints({
 
     deleteSubscription: builder.mutation({
       query: (id) => ({
-        url: `/package/packages/${id}`,
+        url: `/package/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["subscription"],
