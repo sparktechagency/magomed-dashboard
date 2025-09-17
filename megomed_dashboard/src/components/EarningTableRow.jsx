@@ -1,13 +1,14 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { IoCloseOutline } from "react-icons/io5";
+import { FiEye } from "react-icons/fi";
 
 const EarningTableRow = ({ item, list }) => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [itemId, setItemId] = useState(null);
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
     return isNaN(date) ? dateString : date.toLocaleDateString("en-GB");
   };
@@ -23,10 +24,10 @@ const EarningTableRow = ({ item, list }) => {
 
   // Calculate days between dates
   const calculateDays = (startDate, endDate) => {
-    if (!startDate || !endDate) return 'N/A';
+    if (!startDate || !endDate) return "N/A";
     const start = new Date(startDate);
     const end = new Date(endDate);
-    if (isNaN(start) || isNaN(end)) return 'N/A';
+    if (isNaN(start) || isNaN(end)) return "N/A";
     const diffTime = end - start;
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
@@ -34,17 +35,56 @@ const EarningTableRow = ({ item, list }) => {
   return (
     <>
       {/* Table Row with Improved Alignment */}
-      <div className="grid items-center grid-cols-10 gap-2 px-2 my-3 text-sm bg-gray-100 rounded-lg whitespace-nowrap">
+      <div className="grid items-center grid-cols-11 gap-2 px-2 my-3 text-sm bg-gray-100 rounded-lg whitespace-nowrap">
         <div className="flex items-center justify-center py-3">{list}</div>
-        <div className="flex items-center justify-center py-3">{item.freelancerName}</div>
-        <div className="flex items-center justify-center py-3">{item.projectName}</div>
-        <div className="flex items-center justify-center py-3">{item.invoiceNumber}</div>
-        <div className="flex items-center justify-center py-3">{item.serviceType}</div>
-        <div className="flex items-center justify-center py-3">{item.workingDay}</div>
-        <div className="flex items-center justify-center py-3">{item.totalAmount}</div>
-        <div className="flex items-center justify-center py-3">{item.revenue}</div>
-        <div className="flex items-center justify-center py-3">{item.status}</div>
-        <div className="flex items-center justify-center py-3">{item.status || "N/A"}</div>
+        <div className="flex items-center justify-center py-3">
+          {item.userId?.fullName || "N/A"}
+        </div>
+        <div className="flex items-center justify-center py-3">
+          {item.userId?.fullName || "N/A"}{" "}
+          {/* Freelancer Name - using same field for now */}
+        </div>
+        <div className="flex items-center justify-center py-3">
+          {item.subcriptionId ? "Subscription Payment" : "Invoice Payment"}
+        </div>
+        <div className="flex items-center justify-center py-3">
+          {item.invoiceId || item.subcriptionId || "N/A"}
+        </div>
+        <div className="flex items-center justify-center py-3">
+          {item.paymentType || "N/A"}
+        </div>
+        <div className="flex items-center justify-center py-3">
+          N/A {/* Working Days - no field in current response */}
+        </div>
+        <div className="flex items-center justify-center py-3">
+          ${item.amount || 0}
+        </div>
+        <div className="flex items-center justify-center py-3">
+          ${item.transferAmount || 0}
+        </div>
+        <div className="flex items-center justify-center py-3">
+          <span
+            className={`px-2 py-1 rounded text-xs ${
+              item.status === "paid"
+                ? "bg-green-100 text-green-800"
+                : item.status === "pending"
+                ? "bg-yellow-100 text-yellow-800"
+                : item.status === "failed"
+                ? "bg-red-100 text-red-800"
+                : "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {item.status || "N/A"}
+          </span>
+        </div>
+        <div className="flex items-center justify-center py-3">
+          <button
+            onClick={() => showViewModal(item._id)}
+            className="bg-primary text-white px-3 py-1 rounded hover:bg-primary/80 transition-colors"
+          >
+            <FiEye className="inline w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Booking Details Modal */}
@@ -72,43 +112,101 @@ const EarningTableRow = ({ item, list }) => {
                 <IoCloseOutline className="w-6 h-6" />
               </button>
 
-              <h2 className="mb-4 text-xl font-bold text-center text-red-600">Subscription Information</h2>
+              <h2 className="mb-4 text-xl font-bold text-center text-primary">
+                Earning Details
+              </h2>
 
               {/* Modal Content */}
               <div className="px-3 py-4 space-y-3 border rounded-md border-primary">
                 {/* User Information Section */}
                 <div>
-                  <h3 className="mb-2 text-base font-semibold text-primary">User Information</h3>
+                  <h3 className="mb-2 text-base font-semibold text-primary">
+                    User Information
+                  </h3>
                   <div className="flex flex-col gap-2 p-3 bg-gray-100 rounded-md">
-                    <p className="text-sm"><span className="font-medium">User Name:</span> {item.ownerName}</p>
-                    <p className="text-sm"><span className="font-medium">Email:</span> {item.email || 'N/A'}</p>
-                    <p className="text-sm"><span className="font-medium">Phone Number:</span> {item.phoneNumber || 'N/A'}</p>
-                  </div>
-                </div>
-
-                {/* Subscription Details Section */}
-                <div>
-                  <h3 className="mb-2 text-base font-semibold text-primary">Subscription Details</h3>
-                  <div className="flex flex-col gap-2 p-3 bg-gray-100 rounded-md">
-                    <p className="text-sm"><span className="font-medium">Plan:</span> {item.planChoose}</p>
-                    <p className="text-sm"><span className="font-medium">Subscription Start:</span> {formatDate(item.startDate)}</p>
-                    <p className="text-sm"><span className="font-medium">Subscription End:</span> {formatDate(item.endDate)}</p>
-                    <p className="text-sm"><span className="font-medium">Total Days:</span> {calculateDays(item.startDate, item.endDate)}</p>
-                  </div>
-                </div>
-
-                {/* Payment Information Section */}
-                <div>
-                  <h3 className="mb-2 text-base font-semibold text-primary">Payment Information</h3>
-                  <div className="flex flex-col gap-2 p-3 bg-gray-100 rounded-md">
-                    <p className="text-sm"><span className="font-medium">Amount:</span> ${item.amount}</p>
-                    <p className="text-sm"><span className="font-medium">Transaction ID:</span> {item.transection || 'N/A'}</p>
                     <p className="text-sm">
-                      <span className="font-medium">Status:</span>
-                      <span className={`ml-2 px-2 py-1 rounded ${item.status === 'active' ? 'bg-green-500' : 'bg-red-500'
-                        } text-white`}>
-                        {item.status}
+                      <span className="font-medium">Client Name:</span>{" "}
+                      {item.userId?.fullName || "N/A"}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Email:</span>{" "}
+                      {item.userId?.email || "N/A"}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Role:</span>{" "}
+                      {item.userId?.role || "N/A"}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Payment Type:</span>{" "}
+                      {item.paymentType || "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Financial Details Section */}
+                <div>
+                  <h3 className="mb-2 text-base font-semibold text-primary">
+                    Financial Details
+                  </h3>
+                  <div className="flex flex-col gap-2 p-3 bg-gray-100 rounded-md">
+                    <p className="text-sm">
+                      <span className="font-medium">Payment Method:</span>{" "}
+                      {item.method || "N/A"}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Transaction ID:</span>{" "}
+                      {item.transactionId || "N/A"}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">
+                        Invoice/Subscription ID:
+                      </span>{" "}
+                      {item.invoiceId || item.subcriptionId || "N/A"}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Amount:</span> $
+                      {item.amount || 0}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Transfer Amount:</span> $
+                      {item.transferAmount || 0}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Is Refund:</span>{" "}
+                      {item.isRefund ? "Yes" : "No"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Status Information Section */}
+                <div>
+                  <h3 className="mb-2 text-base font-semibold text-primary">
+                    Status Information
+                  </h3>
+                  <div className="flex flex-col gap-2 p-3 bg-gray-100 rounded-md">
+                    <p className="text-sm">
+                      <span className="font-medium">Status:</span>{" "}
+                      <span
+                        className={`ml-2 px-2 py-1 rounded text-xs ${
+                          item.status === "paid"
+                            ? "bg-green-100 text-green-800"
+                            : item.status === "pending"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : item.status === "failed"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {item.status || "N/A"}
                       </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Transaction Date:</span>{" "}
+                      {formatDate(item.transactionDate)}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Created At:</span>{" "}
+                      {formatDate(item.createdAt)}
                     </p>
                   </div>
                 </div>

@@ -31,6 +31,7 @@ function SubscriptionManagement() {
   const [planFeatures, setPlanFeatures] = useState([]);
   const [planImage, setPlanImage] = useState(null);
   const [tenderCount, setTenderCount] = useState(3);
+  const [isUnlimitedTender, setIsUnlimitedTender] = useState(true);
   const [isBadge, setIsBadge] = useState(false);
   const [isSupport, setIsSupport] = useState(false);
   const { data: subscriptions, isLoading, isError } = useGetSubscriptionQuery();
@@ -53,6 +54,7 @@ function SubscriptionManagement() {
     setPlanFeatures([]);
     setPlanImage(null);
     setTenderCount(3);
+    setIsUnlimitedTender(true);
     setIsBadge(false);
     setIsSupport(false);
     setIsModalVisible(true);
@@ -67,6 +69,10 @@ function SubscriptionManagement() {
     setPlanFeatures(subscription.benefits || []);
     setPlanImage(subscription.image);
     setTenderCount(subscription.tenderCount || 3);
+    setIsUnlimitedTender(
+      subscription.tenderCount === -1 ||
+        subscription.tenderCount === "unlimited"
+    );
     setIsBadge(subscription.isBadge || false);
     setIsSupport(subscription.isSupport || false);
     setIsModalVisible(true);
@@ -82,6 +88,7 @@ function SubscriptionManagement() {
     setPlanFeatures([]);
     setPlanImage(null);
     setTenderCount(3);
+    setIsUnlimitedTender(true);
     setIsBadge(false);
     setIsSupport(false);
   };
@@ -123,7 +130,10 @@ function SubscriptionManagement() {
       formData.append("price", planPrice.toString());
       formData.append("type", planType);
       formData.append("category", planCategory);
-      formData.append("tenderCount", tenderCount.toString());
+      formData.append(
+        "tenderCount",
+        isUnlimitedTender ? "unlimited" : tenderCount.toString()
+      );
       formData.append("isBadge", isBadge.toString());
       formData.append("isSupport", isSupport.toString());
 
@@ -158,6 +168,7 @@ function SubscriptionManagement() {
       setPlanFeatures([]);
       setPlanImage(null);
       setTenderCount(3);
+      setIsUnlimitedTender(false);
       setIsBadge(false);
       setIsSupport(false);
     } catch (error) {
@@ -300,14 +311,44 @@ function SubscriptionManagement() {
               <label className="block text-gray-700 text-lg font-semibold mb-2">
                 Tender Count
               </label>
-              <InputNumber
-                value={tenderCount}
-                onChange={(value) => setTenderCount(value)}
-                placeholder="Enter tender count"
-                min={1}
-                style={{ width: "100%" }}
-                addonAfter="tenders"
-              />
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="unlimitedTender"
+                    name="tenderType"
+                    checked={isUnlimitedTender}
+                    onChange={() => setIsUnlimitedTender(true)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="unlimitedTender" className="text-gray-700">
+                    Unlimited
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="limitedTender"
+                    name="tenderType"
+                    checked={!isUnlimitedTender}
+                    onChange={() => setIsUnlimitedTender(false)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="limitedTender" className="text-gray-700">
+                    Others
+                  </label>
+                </div>
+                {!isUnlimitedTender && (
+                  <InputNumber
+                    value={tenderCount}
+                    onChange={(value) => setTenderCount(value)}
+                    placeholder="Enter tender count"
+                    min={1}
+                    style={{ width: "100%" }}
+                    addonAfter="tenders"
+                  />
+                )}
+              </div>
             </div>
 
             <div className="mb-4">
@@ -437,6 +478,10 @@ function SubscriptionManagement() {
                   <span className="text-gray-600">/{planType}</span>
                 </div>
                 <p className="text-gray-500 text-sm">Billed {planType}</p>
+                <p className="text-gray-500 text-sm">
+                  Tender Count:{" "}
+                  {isUnlimitedTender ? "Unlimited" : `${tenderCount} tenders`}
+                </p>
               </div>
 
               <Divider className="my-4" />
