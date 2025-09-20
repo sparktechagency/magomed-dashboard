@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
-import { Tooltip } from "react-tooltip";
+
 import "react-tooltip/dist/react-tooltip.css";
 
 // const geoUrl =
@@ -114,44 +114,91 @@ const clientsData = {
   Poland: 350,
 };
 
-export default function WorldMap({ title = "World Map" }) {
+export default function WorldMap({ title = "World Map", clientsData = {} }) {
   const [tooltipContent, setTooltipContent] = useState("");
 
-  // Function to get color based on client count
-  const getCountryColor = (clientCount) => {
-    if (clientCount >= 1000) return "#16a34a"; // Green for high count
-    if (clientCount >= 500) return "#22c55e"; // Medium green for medium-high count
-    if (clientCount >= 200) return "#4ade80"; // Light green for medium count
-    if (clientCount >= 100) return "#86efac"; // Very light green for low count
-    if (clientCount > 0) return "#dcfce7"; // Very light green for any data
-    return "#D6D6DA"; // Gray for no data
-  };
+  // Prepare heatmap data with color intensity
+  const heatmapData = useMemo(() => {
+    // Find max value for normalization
+    const maxClients = Math.max(
+      1, // Ensure we don't divide by zero
+      ...Object.values(clientsData)
+    );
 
-  const legendData = [
-    { label: "1000+ clients", count: "1000+", color: "#16a34a" },
-    { label: "500-999 clients", count: "500-999", color: "#22c55e" },
-    { label: "200-499 clients", count: "200-499", color: "#4ade80" },
-    { label: "100-199 clients", count: "100-199", color: "#86efac" },
-    { label: "No data", count: "No data", color: "#D6D6DA" },
-  ];
+    // Generate color scale function
+    const getColorIntensity = (count) => {
+      // Normalize the count between 0 and 1
+      const normalizedIntensity = count / maxClients;
+
+      // Interpolate color from light to dark green
+      const r = Math.round(22 * (1 - normalizedIntensity));
+      const g = Math.round(
+        197 * (1 - normalizedIntensity) + 94 * normalizedIntensity
+      );
+      const b = Math.round(94 * (1 - normalizedIntensity));
+
+      return `rgb(${r}, ${g}, ${b})`;
+    };
+
+    return {
+      getColorIntensity,
+      maxClients,
+    };
+  }, [clientsData]);
+
+  // Prepare legend data
+  const legendData = useMemo(() => {
+    const { maxClients, getColorIntensity } = heatmapData;
+
+    // Create 5 legend steps
+    return [
+      {
+        label: `1-${Math.round(maxClients * 0.2)}`,
+        color: getColorIntensity(maxClients * 0.1),
+      },
+      {
+        label: `${Math.round(maxClients * 0.2)}-${Math.round(
+          maxClients * 0.4
+        )}`,
+        color: getColorIntensity(maxClients * 0.3),
+      },
+      {
+        label: `${Math.round(maxClients * 0.4)}-${Math.round(
+          maxClients * 0.6
+        )}`,
+        color: getColorIntensity(maxClients * 0.5),
+      },
+      {
+        label: `${Math.round(maxClients * 0.6)}-${Math.round(
+          maxClients * 0.8
+        )}`,
+        color: getColorIntensity(maxClients * 0.7),
+      },
+      {
+        label: `${Math.round(maxClients * 0.8)}-${maxClients}`,
+        color: getColorIntensity(maxClients * 0.9),
+      },
+    ];
+  }, [heatmapData]);
 
   return (
     <div className="w-full mx-auto rounded-lg shadow-xl p-6">
       {/* Title */}
-      <h1 className="text-2xl font-bold text-blue-700 mb-6">{title}</h1>
+      <h1 className="text-2xl font-bold text-green-700 mb-6">{title}</h1>
 
       {/* Legend */}
-      <div className="flex ">
-        <div className="flex flex-col gap-3 mb-8">
+      <div className="flex">
+        <div className="flex flex-col gap-3 mb-8 mr-4">
           {legendData.map((item, index) => (
             <div key={index} className="flex items-center gap-3">
               <div
                 className="w-5 h-5 rounded-sm"
                 style={{ backgroundColor: item.color }}
               />
-              <div className="flex flex-col ">
-                <span className="font-medium text-gray-800">{item.label}</span>
-                <span className="text-sm text-gray-600">{item.count}</span>
+              <div className="flex flex-col">
+                <span className="font-medium text-gray-800">
+                  {item.label} Clients
+                </span>
               </div>
             </div>
           ))}
@@ -168,8 +215,8 @@ export default function WorldMap({ title = "World Map" }) {
 
                   // Comprehensive name extraction
                   const possibleNames = [
-                    props.name, // lowercase name
-                    props.NAME, // uppercase NAME
+                    props.name,
+                    props.NAME,
                     props.name_long,
                     props.NAME_LONG,
                     props.sovereignt,
@@ -178,7 +225,7 @@ export default function WorldMap({ title = "World Map" }) {
                     props.ADMIN,
                     props.name_en,
                     props.NAME_EN,
-                  ].filter(Boolean); // Remove undefined values
+                  ].filter(Boolean);
 
                   const name = possibleNames[0] || "Unknown Country";
 
@@ -197,7 +244,7 @@ export default function WorldMap({ title = "World Map" }) {
                   const code3 = possibleCodes.find((code) => code.length === 3);
                   const code2 = possibleCodes.find((code) => code.length === 2);
 
-                  // Try multiple ways to find the data - be very thorough
+                  // Try multiple ways to find the data
                   const clientCount =
                     clientsData[code3] ||
                     clientsData[code2] ||
@@ -205,6 +252,12 @@ export default function WorldMap({ title = "World Map" }) {
                       (count, countryName) => count || clientsData[countryName],
                       0
                     );
+
+                  // Get color intensity based on client count
+                  const fillColor =
+                    clientCount > 0
+                      ? heatmapData.getColorIntensity(clientCount)
+                      : "#D6D6DA";
 
                   return (
                     <Geography
@@ -216,7 +269,7 @@ export default function WorldMap({ title = "World Map" }) {
                       onMouseLeave={() => setTooltipContent("")}
                       style={{
                         default: {
-                          fill: getCountryColor(clientCount),
+                          fill: fillColor,
                           stroke: "#ffffff",
                           strokeWidth: 0.5,
                         },

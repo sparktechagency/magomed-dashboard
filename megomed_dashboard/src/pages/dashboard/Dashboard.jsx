@@ -11,7 +11,10 @@ import DeliveryAcceptedChart from "../../components/dashboard/DeliveryAcceptedCh
 import FreelancersWorldMap from "../../components/dashboard/FreelancersWorldMap";
 import WorldMap from "../WorldMap/WorldMap";
 import WeeklyEarnings from "../../components/dashboard/WicklyEarning";
-import { useGetDashboardDataQuery } from "../../features/dashboard/dashboardApi";
+import {
+  useGetDashboardDataQuery,
+  useGetClientFreelancerByRegionQuery,
+} from "../../features/dashboard/dashboardApi";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -37,6 +40,51 @@ const Dashboard = () => {
   const totalProjectDelivered = dashboardData?.data?.totalDeliveryProject || 0;
   const totalRevenue = dashboardData?.data?.totalRevenue || 0;
   const totalUsers = dashboardData?.data?.totalUsers || 0;
+
+  const { data: clientFreelancerByRegion } =
+    useGetClientFreelancerByRegionQuery(undefined, {
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
+    });
+
+  // Transform client and freelancer region data
+  const transformRegionData = (regionData) => {
+    // Null check for regionData
+    if (!regionData || !Array.isArray(regionData)) {
+      console.warn("Invalid region data received");
+      return {};
+    }
+
+    // Dynamic transformation
+    return regionData
+      .filter((item) => item)
+      .reduce((acc, item) => {
+        // Normalize country name
+        const country =
+          item.country && item.country.trim() !== ""
+            ? item.country.charAt(0).toUpperCase() +
+              item.country.slice(1).toLowerCase()
+            : "Not Specified";
+
+        // Accumulate counts
+        acc[country] =
+          (acc[country] || 0) + (item.freelancerCount || item.clientCount || 0);
+        return acc;
+      }, {});
+  };
+
+  // Transform region data
+  const freelancerRegionData = transformRegionData(
+    clientFreelancerByRegion?.data?.freelancers || []
+  );
+
+  const clientRegionData = transformRegionData(
+    clientFreelancerByRegion?.data?.clients || []
+  );
+
+  // Log transformed data for debugging
+  console.log("Freelancer Region Data:", freelancerRegionData);
+  console.log("Client Region Data:", clientRegionData);
 
   const analysisCards = [
     {
@@ -104,8 +152,11 @@ const Dashboard = () => {
       </div>
 
       <div className="flex gap-5">
-        <FreelancersWorldMap title={"Freelancers Region"} />
-        <WorldMap title={"Clients Region"} />
+        <FreelancersWorldMap
+          title={"Freelancers Region"}
+          freelancersData={freelancerRegionData}
+        />
+        <WorldMap title={"Clients Region"} clientsData={clientRegionData} />
       </div>
     </div>
   );

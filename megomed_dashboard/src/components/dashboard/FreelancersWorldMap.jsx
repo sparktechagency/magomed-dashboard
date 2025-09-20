@@ -1,137 +1,74 @@
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
-
-// const geoUrl =
-//   "https://raw.githubusercontent.com/deldersveld/topojson/master/world-countries.json";
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
-const FreelancersWorldMap = ({ title }) => {
+const FreelancersWorldMap = ({ title, freelancersData = {} }) => {
   const [hoveredCountry, setHoveredCountry] = useState(null);
 
-  // Comprehensive freelancer data with multiple country identifiers
-  const freelancersData = {
-    // United States
-    USA: 1200,
-    US: 1200,
-    "United States": 1200,
-    "United States of America": 1200,
-    // India
-    IND: 800,
-    IN: 800,
-    India: 800,
-    // Bangladesh
-    BGD: 600,
-    BD: 600,
-    Bangladesh: 600,
-    // Pakistan
-    PAK: 400,
-    PK: 400,
-    Pakistan: 400,
-    // France
-    FRA: 2000,
-    FR: 2000,
-    France: 2000,
-    // United Kingdom
-    GBR: 1500,
-    GB: 1500,
-    "United Kingdom": 1500,
-    UK: 1500,
-    // Germany
-    DEU: 1100,
-    DE: 1100,
-    Germany: 1100,
-    // Canada
-    CAN: 900,
-    CA: 900,
-    Canada: 900,
-    // Australia
-    AUS: 700,
-    AU: 700,
-    Australia: 700,
-    // Brazil
-    BRA: 500,
-    BR: 500,
-    Brazil: 500,
-    // Mexico
-    MEX: 300,
-    MX: 300,
-    Mexico: 300,
-    // Japan
-    JPN: 1000,
-    JP: 1000,
-    Japan: 1000,
-    // China
-    CHN: 1800,
-    CN: 1800,
-    China: 1800,
-    // Russia
-    RUS: 400,
-    RU: 400,
-    Russia: 400,
-    "Russian Federation": 400,
-    // Nigeria
-    NGA: 350,
-    NG: 350,
-    Nigeria: 350,
-    // Egypt
-    EGY: 200,
-    EG: 200,
-    Egypt: 200,
-    // South Africa
-    ZAF: 180,
-    ZA: 180,
-    "South Africa": 180,
-    // Kenya
-    KEN: 150,
-    KE: 150,
-    Kenya: 150,
-    // Morocco
-    MAR: 120,
-    MA: 120,
-    Morocco: 120,
-    // Tunisia
-    TUN: 100,
-    TN: 100,
-    Tunisia: 100,
-    // Western Sahara (for the specific case in the debug log)
-    ESH: 50,
-    "W. Sahara": 50,
-    "Western Sahara": 50,
-    // Additional countries
-    ESP: 800,
-    ES: 800,
-    Spain: 800,
-    ITA: 750,
-    IT: 750,
-    Italy: 750,
-    NLD: 650,
-    NL: 650,
-    Netherlands: 650,
-    SWE: 600,
-    SE: 600,
-    Sweden: 600,
-    POL: 550,
-    PL: 550,
-    Poland: 550,
-  };
+  // Prepare heatmap data with color intensity
+  const heatmapData = useMemo(() => {
+    // Find max value for normalization
+    const maxFreelancers = Math.max(
+      1, // Ensure we don't divide by zero
+      ...Object.values(freelancersData)
+    );
 
-  const legendData = [
-    { color: "#1e40af", label: "1500+ freelancers", count: 1500 },
-    { color: "#3b82f6", label: "1000-1499 freelancers", count: 1000 },
-    { color: "#60a5fa", label: "500-999 freelancers", count: 500 },
-    { color: "#93c5fd", label: "100-499 freelancers", count: 100 },
-  ];
+    // Generate color scale function
+    const getColorIntensity = (count) => {
+      // Normalize the count between 0 and 1
+      const normalizedIntensity = count / maxFreelancers;
 
-  // Function to get color based on freelancer count
-  const getCountryColor = (freelancerCount) => {
-    if (freelancerCount >= 1500) return "#1e40af"; // Dark blue for high count
-    if (freelancerCount >= 1000) return "#3b82f6"; // Blue for medium-high count
-    if (freelancerCount >= 500) return "#60a5fa"; // Light blue for medium count
-    if (freelancerCount >= 100) return "#93c5fd"; // Very light blue for low count
-    if (freelancerCount > 0) return "#dbeafe"; // Very light blue for any data
-    return "#D6D6DA"; // Gray for no data
-  };
+      // Interpolate color from light to dark blue
+      const r = Math.round(135 * (1 - normalizedIntensity));
+      const g = Math.round(206 * (1 - normalizedIntensity));
+      const b = Math.round(
+        235 * (1 - normalizedIntensity) + 100 * normalizedIntensity
+      );
+
+      return `rgb(${r}, ${g}, ${b})`;
+    };
+
+    return {
+      getColorIntensity,
+      maxFreelancers,
+    };
+  }, [freelancersData]);
+
+  // Prepare legend data
+  const legendData = useMemo(() => {
+    const { maxFreelancers, getColorIntensity } = heatmapData;
+
+    // Create 5 legend steps
+    return [
+      {
+        label: `1-${Math.round(maxFreelancers * 0.2)}`,
+        color: getColorIntensity(maxFreelancers * 0.1),
+      },
+      {
+        label: `${Math.round(maxFreelancers * 0.2)}-${Math.round(
+          maxFreelancers * 0.4
+        )}`,
+        color: getColorIntensity(maxFreelancers * 0.3),
+      },
+      {
+        label: `${Math.round(maxFreelancers * 0.4)}-${Math.round(
+          maxFreelancers * 0.6
+        )}`,
+        color: getColorIntensity(maxFreelancers * 0.5),
+      },
+      {
+        label: `${Math.round(maxFreelancers * 0.6)}-${Math.round(
+          maxFreelancers * 0.8
+        )}`,
+        color: getColorIntensity(maxFreelancers * 0.7),
+      },
+      {
+        label: `${Math.round(maxFreelancers * 0.8)}-${maxFreelancers}`,
+        color: getColorIntensity(maxFreelancers * 0.9),
+      },
+    ];
+  }, [heatmapData]);
 
   return (
     <div className="w-full mx-auto rounded-lg shadow-xl p-6">
@@ -139,18 +76,18 @@ const FreelancersWorldMap = ({ title }) => {
       <h1 className="text-2xl font-bold text-blue-700 mb-6">{title}</h1>
 
       {/* Legend */}
-
-      <div className="flex ">
-        <div className="flex flex-col gap-3 mb-8">
+      <div className="flex">
+        <div className="flex flex-col gap-3 mb-8 mr-4">
           {legendData.map((item, index) => (
-            <div key={index} className="flex  items-center gap-3">
+            <div key={index} className="flex items-center gap-3">
               <div
                 className="w-5 h-5 rounded-sm"
                 style={{ backgroundColor: item.color }}
               />
-              <div className="flex flex-col ">
-                <span className="font-medium text-gray-800">{item.label}</span>
-                <span className="text-sm text-gray-600">{item.count}</span>
+              <div className="flex flex-col">
+                <span className="font-medium text-gray-800">
+                  {item.label} Freelancers
+                </span>
               </div>
             </div>
           ))}
@@ -167,8 +104,8 @@ const FreelancersWorldMap = ({ title }) => {
 
                   // Comprehensive name extraction
                   const possibleNames = [
-                    props.name, // lowercase name
-                    props.NAME, // uppercase NAME
+                    props.name,
+                    props.NAME,
                     props.name_long,
                     props.NAME_LONG,
                     props.sovereignt,
@@ -177,7 +114,7 @@ const FreelancersWorldMap = ({ title }) => {
                     props.ADMIN,
                     props.name_en,
                     props.NAME_EN,
-                  ].filter(Boolean); // Remove undefined values
+                  ].filter(Boolean);
 
                   const name = possibleNames[0] || "Unknown Country";
 
@@ -196,7 +133,7 @@ const FreelancersWorldMap = ({ title }) => {
                   const code3 = possibleCodes.find((code) => code.length === 3);
                   const code2 = possibleCodes.find((code) => code.length === 2);
 
-                  // Try multiple ways to find the data - be very thorough
+                  // Try multiple ways to find the data
                   const freelancerCount =
                     freelancersData[code3] ||
                     freelancersData[code2] ||
@@ -206,18 +143,11 @@ const FreelancersWorldMap = ({ title }) => {
                       0
                     );
 
-                  // Debug logging for first few countries
-                  if (geographies.indexOf(geo) < 3) {
-                    console.log("Freelancer Country debug:", {
-                      name,
-                      code3,
-                      code2,
-                      count: freelancerCount,
-                      allProps: props,
-                      possibleNames,
-                      possibleCodes,
-                    });
-                  }
+                  // Get color intensity based on freelancer count
+                  const fillColor =
+                    freelancerCount > 0
+                      ? heatmapData.getColorIntensity(freelancerCount)
+                      : "#D6D6DA";
 
                   return (
                     <Geography
@@ -232,7 +162,7 @@ const FreelancersWorldMap = ({ title }) => {
                       onMouseLeave={() => setHoveredCountry(null)}
                       style={{
                         default: {
-                          fill: getCountryColor(freelancerCount),
+                          fill: fillColor,
                           stroke: "#ffffff",
                           strokeWidth: 0.5,
                         },
