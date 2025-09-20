@@ -11,44 +11,53 @@ import DeliveryAcceptedChart from "../../components/dashboard/DeliveryAcceptedCh
 import FreelancersWorldMap from "../../components/dashboard/FreelancersWorldMap";
 import WorldMap from "../WorldMap/WorldMap";
 import WeeklyEarnings from "../../components/dashboard/WicklyEarning";
+import { useGetDashboardDataQuery } from "../../features/dashboard/dashboardApi";
 
 const Dashboard = () => {
   const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   if (status === "rejected" && isError && queryError) {
-  //     localStorage.removeItem("adminToken");
-  //     navigate("/auth/login");
-  //   }
-  // }, [status, isError, queryError, navigate]);
+  const {
+    data: dashboardData,
+    isLoading,
+    isError,
+    error,
+  } = useGetDashboardDataQuery();
+
+  console.log("dashboardData", dashboardData);
+
+  // Extract data with proper null checks
+  const weeklyEarnings = dashboardData?.data?.last7DaysEarning || 0;
+  const weeklyDeliveryAccepted =
+    dashboardData?.data?.last7DaysTotalDeliveryAcceptProject || [];
+  const totalActiveProject =
+    dashboardData?.data?.totalActiveProjects?.length || 0;
+  const totalFreelancer = dashboardData?.data?.totalFreelancer || 0;
+  const totalClient = dashboardData?.data?.totalClient || 0;
+  const totalProjectAccepted = dashboardData?.data?.totalAcceptProject || 0;
+  const totalProjectDelivered = dashboardData?.data?.totalDeliveryProject || 0;
+  const totalRevenue = dashboardData?.data?.totalRevenue || 0;
+  const totalUsers = dashboardData?.data?.totalUsers || 0;
 
   const analysisCards = [
     {
-      // value: queryLoading ? <Spin size="small" /> : allShop?.data?.totalFoodSell,
-      value: 32,
-      title: "Total Food Sell",
-      icon: "/icons/sell.svg",
-      percentage: "4% (30 days)",
-      // orderData: OrderData,
-    },
-    {
-      // value: queryLoading ? <Spin size="small" /> : `$${allShop?.data?.totalRevenue?.toFixed(2)}`,
-      value: "$632",
-      title: "Total Revenue",
-      icon: "/icons/order.svg",
-      percentage: "12% (30 days)",
-      // orderData: down,
-    },
-    {
-      // value: queryLoading ? <Spin size="small" /> : allShop?.data?.totalUser || 0,
-      value: 32,
-      title: "Total User",
+      value: totalUsers,
+      title: "Total Users",
       icon: "/icons/users.svg",
     },
     {
-      // value: queryLoading ? <Spin size="small" /> : allShop?.data?.totalShop || 0,
-      value: 34,
-      title: "Total Shop",
+      value: `$${totalRevenue.toFixed(2)}`,
+      title: "Total Revenue",
+      icon: "/icons/order.svg",
+      percentage: "Last Update",
+    },
+    {
+      value: totalProjectAccepted,
+      title: "Total Accepted Projects",
+      icon: "/icons/sell.svg",
+    },
+    {
+      value: totalProjectDelivered,
+      title: "Total Delivered Projects",
       icon: "/icons/spot.svg",
     },
   ];
@@ -59,17 +68,26 @@ const Dashboard = () => {
       <div className="flex items-center justify-between gap-10">
         <div className="w-full">
           <Suspense fallback={<Skeleton active />}>
-            <WeeklyEarnings />
+            <WeeklyEarnings weeklyEarnings={weeklyEarnings} />
           </Suspense>
         </div>
         <div className="w-full">
           <Suspense fallback={<Skeleton active />}>
-            <DeliveryAcceptedChart />
+            <DeliveryAcceptedChart
+              weeklyDeliveryAccepted={weeklyDeliveryAccepted}
+            />
           </Suspense>
         </div>
 
         <div className="w-full">
-          <AdminStatistics />
+          <AdminStatistics
+            totalUsers={totalUsers}
+            totalEarning={totalRevenue}
+            totalFreelancer={totalFreelancer}
+            totalClient={totalClient}
+            totalProjectAccepted={totalProjectAccepted}
+            totalProjectDelivered={totalProjectDelivered}
+          />
         </div>
       </div>
 
