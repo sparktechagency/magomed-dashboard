@@ -194,6 +194,7 @@ const Service = () => {
               value={newServiceName}
               onChange={(e) => setNewServiceName(e.target.value)}
               className="w-full"
+              rules={[{ required: true, message: "Please enter service name" }]}
             />
           </div>
 
@@ -209,6 +210,9 @@ const Service = () => {
               accept="image/*"
               maxCount={1}
               beforeUpload={() => false} // Prevent auto upload
+              rules={[
+                { required: true, message: "Please upload service image" },
+              ]}
             >
               <Button icon={<UploadOutlined />}>Click to Upload</Button>
             </Upload>

@@ -1,4 +1,5 @@
 import ServiceTableRow from "./ServiceTableRow";
+import { baseURLImage } from "../utils/BaseURL";
 
 const ServiceTable = ({ columns, data }) => {
   return (
@@ -17,7 +18,7 @@ const ServiceTable = ({ columns, data }) => {
         <div className="border-2 border-opacity-50 rounded-lg bg-surfacePrimary border-primary">
           {data.length > 0 ? (
             data.map((item, i) => (
-              <ServiceTableRow item={item} key={i} list={i + 1} />
+              <ServiceTableRow item={item} key={item._id || i} list={i + 1} />
             ))
           ) : (
             <div className="py-4 text-center">No services found</div>

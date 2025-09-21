@@ -5,8 +5,19 @@ import { dashboardApi } from "./features/dashboard/dashboardApi";
 import { earningApi } from "./features/earning/earningApi";
 import idReducer from "./features/ids/idSlice";
 import { userApi } from "./features/userManagement/userManagementApi";
+import { projectApi } from "./features/project/projectApi";
+import { serviceApi } from "./features/service/serviceApi";
+import { categoryApi } from "./features/category/categoryApi";
 
-const apis = [businessApi, dashboardApi, earningApi, userApi];
+const apis = [
+  businessApi,
+  dashboardApi,
+  earningApi,
+  userApi,
+  projectApi,
+  serviceApi,
+  categoryApi,
+];
 
 export const store = configureStore({
   reducer: {

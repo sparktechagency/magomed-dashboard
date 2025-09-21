@@ -3,7 +3,7 @@ import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 
 // Layout & Pages
 import DeletePage from "./components/delete-page/DeletePage";
-import ProjectManagement from "./components/ProjectManagement/ProjectManagement";
+import ProjectManagement from "./pages/ProjectManagement/ProjectManagement";
 import Settings from "./components/Settings/Settings";
 import SubscriptionManagement from "./components/Subscription/SubscriptionManagement";
 import Layout from "./layouts/Layout";

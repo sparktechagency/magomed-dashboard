@@ -1,12 +1,11 @@
-import ProjectManagementTableBody from './ProjectManagementTableBody';
-
+import ProjectManagementTableBody from "./ProjectManagementTableBody";
 
 const ProjectManagementTableHead = ({ columns, data }) => {
   return (
     <main className="overflow-x-auto">
-      <section className="min-w-[1200px] w-full bg-transparent rounded-lg shadow-md space-y-3">
+      <section className="min-w-[1600px] w-full bg-transparent rounded-lg shadow-md space-y-3">
         {/* Header section */}
-        <div className="grid grid-cols-10 text-center border-2 border-opacity-50 rounded-lg justify-items-stretch bg-surfacePrimary border-primary">
+        <div className="grid grid-cols-11 text-center border-2 border-opacity-50 rounded-lg justify-items-stretch bg-surfacePrimary border-primary">
           {columns.map((column, index) => (
             <div key={index} className="py-3 text-sm font-semibold">
               {column}
@@ -21,12 +20,11 @@ const ProjectManagementTableHead = ({ columns, data }) => {
               <ProjectManagementTableBody
                 key={user._id}
                 user={user}
-                // list={i + 1 + ((currentPage - 1) * itemsPerPage)}
                 list={i + 1}
               />
             ))
           ) : (
-            <div className="py-8 text-center">No users found</div>
+            <div className="py-8 text-center">No projects found</div>
           )}
         </div>
       </section>

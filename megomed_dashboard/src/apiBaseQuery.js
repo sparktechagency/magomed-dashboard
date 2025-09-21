@@ -23,5 +23,10 @@ export const baseApi = createApi({
     "booking",
     "notification",
     "settings",
+    "subscription",
+    "earning",
+    "profile",
+    "settings",
+    "project",
   ],
 });
