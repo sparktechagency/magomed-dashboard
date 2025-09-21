@@ -22,6 +22,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import UserManagement from "./pages/UserManagement/UserManagement";
 import WorldMap from "./pages/WorldMap/WorldMap";
+import Category from "./pages/category/category";
 
 const Routers = () => {
   return (
@@ -50,6 +51,7 @@ const Routers = () => {
           <Route path="/project-management" element={<ProjectManagement />} />
           <Route path="settings" element={<Settings />} />
           <Route path="subscription" element={<SubscriptionManagement />} />
+          <Route path="category" element={<Category />} />
           <Route path="earning" element={<Earning />} />
           <Route path="notification" element={<Notification />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} />

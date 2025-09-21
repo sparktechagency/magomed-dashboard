@@ -3,52 +3,41 @@ import { baseApi } from "../../apiBaseQuery";
 export const categoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getCategory: builder.query({
-      query: () => "/category",
-      providesTags: ["category"],
-    }),
-
-    getParticularCategory: builder.query({
-      query: (id) => ({
-        url: `/category/${id}`,
-        method: "GET",
+      query: ({ page, limit }) => ({
+        url: "/category",
+        params: { page, limit },
       }),
-      providesTags: ["category"],
+      providesTags: ["categories"],
     }),
-
     createCategory: builder.mutation({
       query: (data) => ({
-        url: "/category",
+        url: "/category/create-category",
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["category"],
+      invalidatesTags: ["categories"],
     }),
-
-    editCategory: builder.mutation({
-      query: ({ data, id }) => ({
-        url: `/category/${id}`,
-        method: "PATCH",
-        body: data,
-      }),
-      invalidatesTags: ["category"],
-    }),
-
     updateCategoryStatus: builder.mutation({
-      query: ({ data, id }) => ({
+      query: ({ id, isActive }) => ({
         url: `/category/${id}`,
         method: "PATCH",
-        body: data,
+        body: { isActive },
       }),
-      invalidatesTags: ["category"],
+      invalidatesTags: ["categories"],
     }),
-
+    deleteCategory: builder.mutation({
+      query: (id) => ({
+        url: `/category/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["categories"],
+    }),
   }),
 });
 
 export const {
   useGetCategoryQuery,
   useCreateCategoryMutation,
-  useEditCategoryMutation,
   useUpdateCategoryStatusMutation,
-  useGetParticularCategoryQuery
+  useDeleteCategoryMutation,
 } = categoryApi;

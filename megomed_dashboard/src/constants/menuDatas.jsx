@@ -4,11 +4,11 @@ export const menuDatas = [
     title: "Dashboard Overview",
     link: "/",
   },
-  // {
-  //   icon: "/icons/sidebar/instituteed.png",
-  //   title: "Institute Management",
-  //   link: "/institute-management",
-  // },
+  {
+    icon: "/icons/sidebar/instituteed.png",
+    title: "Category Management",
+    link: "/category",
+  },
 
   {
     icon: "/icons/sidebar/user.png",
@@ -28,13 +28,11 @@ export const menuDatas = [
     link: "/earning",
   },
 
-
   {
     icon: "/icons/sidebar/service.png",
     title: "Support",
     link: "/support",
   },
-
 
   {
     icon: "/icons/sidebar/subcription.png",
