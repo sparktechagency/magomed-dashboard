@@ -1,13 +1,15 @@
 import { CloseOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import { Avatar, Button, Modal, Switch, message } from "antd";
 import { useState } from "react";
-import { useUpdateUserStatusMutation } from '../features/userManagement/userManagementApi';
+import { useUpdateUserStatusMutation } from "../features/userManagement/userManagementApi";
 
-const UserManagementTableRow = ({ user, list }) => {
+const UserManagementTableRow = ({ user, list, columns }) => {
   const [switchModalVisible, setSwitchModalVisible] = useState(false);
   const [removeModalVisible, setRemoveModalVisible] = useState(false);
   const [userDetailsModalVisible, setUserDetailsModalVisible] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState(user.status); // Add local state
+  const [currentStatus, setCurrentStatus] = useState(
+    user.isActive ? "active" : "blocked"
+  ); // Add local state
   const [updateUserStatus, { isLoading }] = useUpdateUserStatusMutation();
 
   const handleViewDetails = () => {
@@ -18,11 +20,9 @@ const UserManagementTableRow = ({ user, list }) => {
     setSwitchModalVisible(true);
   };
 
-
   const handleDelete = () => {
     setRemoveModalVisible(true);
   };
-
 
   const handleConfirmDelete = async (id) => {
     // Implement delete logic here
@@ -34,18 +34,16 @@ const UserManagementTableRow = ({ user, list }) => {
     } catch (error) {
       message.error(error?.data?.message || "Failed to delete employee");
       console.log("Delete error:", error);
-
     }
     setRemoveModalVisible(false);
   };
 
-
   const handleConfirmSwitch = async () => {
     try {
-      const newStatus = currentStatus === 'active' ? 'block' : 'active';
+      const newStatus = currentStatus === "active" ? "blocked" : "active";
       const response = await updateUserStatus({
         id: user._id,
-        status: newStatus
+        status: newStatus,
       }).unwrap();
 
       console.log(response);
@@ -56,50 +54,83 @@ const UserManagementTableRow = ({ user, list }) => {
       message.success(`User status updated to ${newStatus}`);
       setSwitchModalVisible(false);
     } catch (err) {
-      message.error('Failed to update user status');
+      message.error("Failed to update user status");
     }
   };
 
   // Format date to DD-MM-YYYY
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   };
 
+  const gridCols = columns.length;
+
+  // Define grid classes based on column count
+  const getGridClass = (colCount) => {
+    switch (colCount) {
+      case 7:
+        return "grid-cols-7";
+      case 9:
+        return "grid-cols-9";
+      case 10:
+        return "grid-cols-10";
+      default:
+        return `grid-cols-${colCount}`;
+    }
+  };
+
   return (
     <>
-      <div className="grid grid-cols-10 my-3 text-sm bg-gray-100 rounded-lg whitespace-nowrap">
+      <div
+        className={`grid ${getGridClass(
+          gridCols
+        )} my-3 text-sm bg-gray-100 rounded-lg whitespace-nowrap`}
+      >
         <div className="py-3 text-center">{list}</div>
-        <div className="px-3 py-3 text-center">{user?.name}</div>
+        <div className="px-3 py-3 text-center">{user?.fullName}</div>
         <div className="px-3 py-3 text-center">{user.email}</div>
-        <div className="px-4 py-3 text-center">{user.ServiceType || user.companyName || 'N/A'}</div>
-        <div className="px-4 py-3 text-center">{user.CategoryType || user.jobPostQuantity || 'N/A'}</div>
-        <div className="px-4 py-3 text-center">{user.ProjectCompletedQuantity || user.tenderPostQuantity || 'N/A'}</div>
-        <div className="px-4 py-3 text-center">{user.TotalEarn || user.ProjectCompletedQuantity || 'N/A'}</div>
-        <div className="px-4 py-3 text-center">{user.location || 'N/A'}</div>
-        <div className={`flex items-center justify-center py-3 ${currentStatus === 'active' ? 'text-green-500' : 'text-red-500'}`}>{currentStatus}</div>
-        <div className="flex items-center justify-between gap-2 border rounded border-primary px-1 mx-2">
+        <div className="px-4 py-3 text-center">{user.designation || "N/A"}</div>
+        {columns.includes("Experience") && (
+          <div className="px-4 py-3 text-center">
+            {user.yearsOfExperience || "N/A"}
+          </div>
+        )}
+        {columns.includes("Daily Rate") && (
+          <div className="px-4 py-3 text-center">
+            {user.dailyRate ? `$${user.dailyRate}` : "N/A"}
+          </div>
+        )}
+        <div className="px-4 py-3 text-center">{user.location || "N/A"}</div>
+        <div
+          className={`flex items-center justify-center py-3 ${
+            currentStatus === "active" ? "text-green-500" : "text-red-500"
+          }`}
+        >
+          {currentStatus}
+        </div>
+        <div className="flex items-center justify-evenly gap-2 border rounded border-primary px-1 mx-2">
           <Button
             type="text"
-            icon={<EyeOutlined style={{ fontSize: '18px' }} />}
+            icon={<EyeOutlined style={{ fontSize: "18px" }} />}
             className="text-primary hover:text-primary w-32"
             onClick={handleViewDetails}
           />
           <Switch
-            checked={currentStatus === 'active'}
+            checked={currentStatus === "active"}
             size="small"
             className="ml-2"
             onChange={handleSwitchChange}
           />
-          <Button
+          {/* <Button
             type="text"
             icon={<DeleteOutlined />}
             className="text-red-500 hover:text-red-600"
             onClick={handleDelete}
-          />
+          /> */}
         </div>
       </div>
 
@@ -114,9 +145,9 @@ const UserManagementTableRow = ({ user, list }) => {
       >
         <div className="text-center py-4">
           <p className="text-lg font-medium mb-6">
-            {currentStatus === 'active'
-              ? 'Are you sure Turn off this Account?'
-              : 'Are you sure Turn on this Account?'}
+            {currentStatus === "active"
+              ? "Are you sure Turn off this Account?"
+              : "Are you sure Turn on this Account?"}
           </p>
           <div className="flex justify-center gap-4">
             <Button
@@ -147,7 +178,9 @@ const UserManagementTableRow = ({ user, list }) => {
         centered
       >
         <div className="text-center py-4">
-          <p className="text-base font-medium text-black mb-6">Are you sure Remove this Account</p>
+          <p className="text-base font-medium text-black mb-6">
+            Are you sure Remove this Account
+          </p>
           <div className="flex justify-center gap-4">
             <Button
               onClick={() => setRemoveModalVisible(false)}
@@ -185,13 +218,13 @@ const UserManagementTableRow = ({ user, list }) => {
             className="absolute top-0 right-0 text-primary hover:text-primary text-lg"
             onClick={() => setUserDetailsModalVisible(false)}
             style={{
-              border: '2px solid #002282',
-              borderRadius: '50%',
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              border: "2px solid #002282",
+              borderRadius: "50%",
+              width: "32px",
+              height: "32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           />
 
@@ -213,7 +246,12 @@ const UserManagementTableRow = ({ user, list }) => {
             <div className="space-y-4">
               <div className="flex gap-1 items-center py-2">
                 <span className="font-medium">Name:</span>
-                <span className="">{user?.name}</span>
+                <span className="">{user?.fullName}</span>
+              </div>
+
+              <div className="flex gap-1 items-center py-2">
+                <span className="font-medium">Role:</span>
+                <span className="capitalize">{user?.role}</span>
               </div>
 
               <div className="flex gap-1 items-center py-2">
@@ -221,14 +259,31 @@ const UserManagementTableRow = ({ user, list }) => {
                 <span className="capitalize">{currentStatus}</span>
               </div>
 
-              <div className="flex gap-1 items-center py-2 ">
-                <span className="font-medium">Phone Number: </span>
-                <span className="">{user?.phone || 'N/A'}</span>
-              </div>
-
               <div className="flex items-center py-2 gap-1">
                 <span className="font-medium ">Email: </span>
                 <span className="">{user?.email}</span>
+              </div>
+
+              <div className="flex gap-1 items-center py-2">
+                <span className="font-medium">Designation:</span>
+                <span className="">{user?.designation || "N/A"}</span>
+              </div>
+
+              <div className="flex gap-1 items-center py-2">
+                <span className="font-medium">Experience:</span>
+                <span className="">{user?.yearsOfExperience || "N/A"}</span>
+              </div>
+
+              <div className="flex gap-1 items-center py-2">
+                <span className="font-medium">Daily Rate:</span>
+                <span className="">
+                  {user?.dailyRate ? `$${user.dailyRate}` : "N/A"}
+                </span>
+              </div>
+
+              <div className="flex gap-1 items-center py-2">
+                <span className="font-medium">Location:</span>
+                <span className="">{user?.location || "N/A"}</span>
               </div>
 
               <div className="flex gap-1 items-center py-2">
@@ -238,17 +293,7 @@ const UserManagementTableRow = ({ user, list }) => {
 
               <div className="flex gap-1 items-center py-2">
                 <span className="font-medium">Verified:</span>
-                <span className="">{user.verified ? 'Yes' : 'No'}</span>
-              </div>
-
-              <div className="flex gap-1 items-center py-2">
-                <span className="font-medium">Total Trip:</span>
-                <span className="">N/A</span>
-              </div>
-
-              <div className="flex gap-1 items-center py-2">
-                <span className="font-medium">Total Amount Spend:</span>
-                <span className="">N/A</span>
+                <span className="">{user.isVarified ? "Yes" : "No"}</span>
               </div>
             </div>
           </div>

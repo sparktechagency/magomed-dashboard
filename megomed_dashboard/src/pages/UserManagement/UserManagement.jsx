@@ -1,99 +1,83 @@
-import { FilterOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, DatePicker, Input, Select } from 'antd';
-import { useState } from 'react';
+import { FilterOutlined, SearchOutlined } from "@ant-design/icons";
+import { Button, DatePicker, Input, Select } from "antd";
+import { useState, useEffect } from "react";
 import UserManagementTable from "../../components/UserManagmentTable";
-
+import { useGetUserManagementQuery } from "../../features/userManagement/userManagementApi";
 
 const { Option } = Select;
 
 function UserManagement() {
   // State for active tab (Institution or Department)
-  const [activeTab, setActiveTab] = useState('freelancher');
-  const [searchValue, setSearchValue] = useState('');
-  const [category, setCategory] = useState('All category');
+  const [activeTab, setActiveTab] = useState("freelancher");
+  const [searchValue, setSearchValue] = useState("");
+  const [category, setCategory] = useState("All category");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Fetch users data from API
+  const {
+    data: usersData,
+    isLoading,
+    error,
+  } = useGetUserManagementQuery({
+    page: currentPage,
+    searchValue: searchValue,
+  });
+
+  // Filter users based on role
+  const filteredUsers =
+    usersData?.data?.filter((user) => {
+      if (activeTab === "freelancher") {
+        return user.role === "freelancer";
+      } else {
+        return user.role === "client";
+      }
+    }) || [];
 
   const freelancherColumns = [
     "SL",
     "Name",
     "Email",
-    "Service Type",
-    "Category Type",
-    "Project Completed",
-    "Total Earn",
+    "Designation",
+    "Experience",
+    "Daily Rate",
     "Location",
     "Status",
-    "Action"
+    "Action",
   ];
-
-  const freeLancherData = [
-    {
-      id: 1,
-      name: 'Sabbir Ahmed',
-      email: "john.doe@example.com",
-      ServiceType: "Design",
-      CategoryType: "UI/UX Designer",
-      ProjectCompletedQuantity: 5,
-      TotalEarn: 5000,
-      location: "Bangladesh",
-      status: "Active"
-    }
-  ]
-
 
   const clientColumns = [
     "SL",
     "Name",
     "Email",
-    "Company Name",
-    "Job Post",
-    "Tender Post",
-    "Project Completed",
-    "Total Spend",
+    "Designation",
     "Location",
     "Status",
+    "Action",
   ];
-
-
-  const clientData = [
-    {
-      id: 1,
-      name: 'Pronab kumar',
-      email: "john.doe@example.com",
-      companyName: "xyz name",
-      jobPostQuantity: 5,
-      tenderPostQuantity: 5,
-      ProjectCompletedQuantity: 5,
-      TotalSpend: 5000,
-      location: "Bangladesh",
-      status: "Active"
-
-    }
-  ]
-
-
 
   return (
     <div className="p-6 bg-gray-50">
       <div className="mb-6 flex justify-between">
         <div>
           <Button
-            type={activeTab === 'freelancher' ? 'primary' : 'default'}
-            className={`mr-2 ${activeTab === 'freelancher' ? 'bg-[#002282]' : ''}`}
-            onClick={() => setActiveTab('freelancher')}
+            type={activeTab === "freelancher" ? "primary" : "default"}
+            className={`mr-2 ${
+              activeTab === "freelancher" ? "bg-[#002282]" : ""
+            }`}
+            onClick={() => setActiveTab("freelancher")}
           >
             Freelancer
           </Button>
           <Button
-            type={activeTab === 'client' ? 'primary' : 'default'}
-            className={activeTab === 'client' ? 'bg-[#002282]' : ''}
-            onClick={() => setActiveTab('client')}
+            type={activeTab === "client" ? "primary" : "default"}
+            className={activeTab === "client" ? "bg-[#002282]" : ""}
+            onClick={() => setActiveTab("client")}
           >
             client
           </Button>
         </div>
 
         <div className="flex justify-between items-center">
-          {/* Search Input */}
           <Input
             placeholder="Search here"
             value={searchValue}
@@ -102,10 +86,9 @@ function UserManagement() {
             className="w-full md:w-96 mr-4"
           />
 
-          <DatePicker className='w-full md:w-52 mr-4 h-11' picker="month" />
+          {/* <DatePicker className='w-full md:w-52 mr-4 h-11' picker="month" /> */}
 
-          {/* Category Selector */}
-          <Select
+          {/* <Select
             value={category}
             onChange={(value) => setCategory(value)}
             className="w-full md:w-64"
@@ -118,18 +101,26 @@ function UserManagement() {
             </Select.Option>
             <Select.Option value="Category 1">Category 1</Select.Option>
             <Select.Option value="Category 2">Category 2</Select.Option>
-          </Select>
+          </Select> */}
         </div>
       </div>
 
-      <div className=" rounded-md">
-        {activeTab === 'freelancher' ? (
-          <UserManagementTable columns={freelancherColumns} data={freeLancherData} />
+      <div className="rounded-md">
+        {isLoading ? (
+          <div className="text-center py-8">Loading users...</div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-500">
+            Error loading users: {error.message || "Unknown error"}
+          </div>
+        ) : activeTab === "freelancher" ? (
+          <UserManagementTable
+            columns={freelancherColumns}
+            data={filteredUsers}
+          />
         ) : (
-          <UserManagementTable columns={clientColumns} data={clientData} />
+          <UserManagementTable columns={clientColumns} data={filteredUsers} />
         )}
       </div>
-
     </div>
   );
 }

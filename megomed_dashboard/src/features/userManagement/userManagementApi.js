@@ -3,22 +3,22 @@ import { baseApi } from "../../apiBaseQuery";
 export const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getUserManagement: builder.query({
-      query: ({ page = 1, searchValue = '' }) => ({
-        url: `/user/all-users`,
+      query: ({ page = 1, searchValue = "" }) => ({
+        url: `/users/all-users`,
         params: {
           page,
-          searchTerm: searchValue
-        }
+          searchTerm: searchValue,
+        },
       }),
       providesTags: ["user"],
     }),
     updateUserStatus: builder.mutation({
       query: (data) => ({
-        url: `/user/block-user/${data.id}`, // Updated endpoint
+        url: `/user/all-users/${data.id}`, // Updated endpoint
         method: "PATCH",
-        body: data,  /* {
+        body: data /* {
     "status": "active"
-} */
+} */,
       }),
       invalidatesTags: ["user"],
     }),
