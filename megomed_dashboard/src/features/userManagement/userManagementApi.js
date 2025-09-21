@@ -14,11 +14,9 @@ export const userApi = baseApi.injectEndpoints({
     }),
     updateUserStatus: builder.mutation({
       query: (data) => ({
-        url: `/user/all-users/${data.id}`, // Updated endpoint
+        url: `/users/blocked/${data.id}`, // Updated endpoint
         method: "PATCH",
-        body: data /* {
-    "status": "active"
-} */,
+        body: data,
       }),
       invalidatesTags: ["user"],
     }),
