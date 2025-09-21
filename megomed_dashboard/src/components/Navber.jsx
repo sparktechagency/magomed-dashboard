@@ -11,8 +11,8 @@ import {
   useReadNotificationMutation,
 } from "../features/notification/notification";
 import { useProfileQuery } from "../features/profile/profileApi";
-import { baseURL } from "../utils/BaseURL";
-import { getImageUrl } from '../utils/getImageUrl';
+import { baseURL, baseURLImage } from "../utils/BaseURL";
+import { getImageUrl } from "../utils/getImageUrl";
 
 const Navber = () => {
   const path = useLocation();
@@ -26,14 +26,19 @@ const Navber = () => {
   const iconRef = useRef(null);
 
   const { data: profile, isLoading: profileLoading } = useProfileQuery();
-  console.log("Profile Data:", profile?.data?.image);
+  console.log("Profile Data:", profile?.data?.profile);
 
-  const { data: notifications, refetch, isLoading } = useGetNotificationQuery(undefined, {
+  const {
+    data: notifications,
+    refetch,
+    isLoading,
+  } = useGetNotificationQuery(undefined, {
     refetchOnFocus: true,
     refetchOnReconnect: true,
   });
 
-  const [readNotification, { isLoading: updateLoading }] = useReadNotificationMutation();
+  const [readNotification, { isLoading: updateLoading }] =
+    useReadNotificationMutation();
 
   // Check for mobile device
   useEffect(() => {
@@ -42,26 +47,32 @@ const Navber = () => {
     };
 
     checkDevice();
-    window.addEventListener('resize', checkDevice);
+    window.addEventListener("resize", checkDevice);
 
-    return () => window.removeEventListener('resize', checkDevice);
+    return () => window.removeEventListener("resize", checkDevice);
   }, []);
 
   useEffect(() => {
     socketRef.current = io(baseURL);
 
-    socketRef.current.on("connect", () => { });
+    socketRef.current.on("connect", () => {});
 
     const handleNewNotification = (notification) => {
       refetch();
     };
 
-    socketRef.current.on(`notification::${localStorage.getItem("adminLoginId")}`, handleNewNotification);
+    socketRef.current.on(
+      `notification::${localStorage.getItem("adminLoginId")}`,
+      handleNewNotification
+    );
 
     return () => {
       if (socketRef.current) {
         socketRef.current.off("connect");
-        socketRef.current.off(`notification::${localStorage.getItem("adminLoginId")}`, handleNewNotification);
+        socketRef.current.off(
+          `notification::${localStorage.getItem("adminLoginId")}`,
+          handleNewNotification
+        );
         socketRef.current.disconnect();
       }
     };
@@ -107,11 +118,9 @@ const Navber = () => {
     } else {
       if (path.pathname === "/user-management") {
         navigate(`/user-management?search=${searchQuery}`);
-      }
-      else if (path.pathname === "/driver-management") {
+      } else if (path.pathname === "/driver-management") {
         navigate(`/driver-management?search=${searchQuery}`);
-      }
-      else if (path.pathname === "/earning") {
+      } else if (path.pathname === "/earning") {
         navigate(`/earning?search=${searchQuery}`);
       }
     }
@@ -136,7 +145,7 @@ const Navber = () => {
 
   const formatTime = (timestamp) => {
     if (!timestamp) return "Just now";
-    const bangladeshTime = moment(timestamp).add(6, 'hours');
+    const bangladeshTime = moment(timestamp).add(6, "hours");
     return bangladeshTime.fromNow();
   };
 
@@ -153,11 +162,14 @@ const Navber = () => {
     }
   };
 
-  const unreadCount = notifications?.data?.result.filter(notif => !notif.read).length || 0;
+  const unreadCount =
+    notifications?.data?.result.filter((notif) => !notif.read).length || 0;
 
   const markAllAsRead = async () => {
     try {
-      await Promise.all(notifications.data.result.map(notif => readNotification(notif._id)));
+      await Promise.all(
+        notifications.data.result.map((notif) => readNotification(notif._id))
+      );
       refetch();
     } catch (error) {
       console.error("Error marking all as read:", error);
@@ -168,7 +180,11 @@ const Navber = () => {
 
   // Notification content component to avoid duplication
   const NotificationContent = ({ inDrawer = false }) => (
-    <div className={`overflow-y-auto ${inDrawer ? 'max-h-screen' : 'max-h-96'} custom-scrollbar`}>
+    <div
+      className={`overflow-y-auto ${
+        inDrawer ? "max-h-screen" : "max-h-96"
+      } custom-scrollbar`}
+    >
       {getNotification.length === 0 ? (
         <div className="text-center text-gray-500 p-4">
           <div className="flex justify-center mb-4">
@@ -199,7 +215,9 @@ const Navber = () => {
         getNotification.map((notif, index) => (
           <div
             key={notif._id || index}
-            className={`flex items-start p-3 transition duration-300 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${!notif.read ? "bg-blue-50" : ""}`}
+            className={`flex items-start p-3 transition duration-300 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
+              !notif.read ? "bg-blue-50" : ""
+            }`}
             onClick={() => handleNotificationClick(notif)}
           >
             <div className="flex-1">
@@ -213,7 +231,11 @@ const Navber = () => {
                   {formatTime(notif.createdAt)}
                 </span>
               </div>
-              <p className={`text-sm break-words ${!notif.read ? "font-medium" : "text-gray-600"}`}>
+              <p
+                className={`text-sm break-words ${
+                  !notif.read ? "font-medium" : "text-gray-600"
+                }`}
+              >
                 {notif.text}
               </p>
               {notif.read && !notif.showAlert && (
@@ -271,14 +293,21 @@ const Navber = () => {
           >
             {/* Hide name on mobile, show on larger screens */}
             <span className="hidden sm:inline-block mr-2 text-gray-700 text-sm lg:text-base">
-              Hello, <b className="break-words">{profile?.data?.name || "Sabbir"}</b>
+              Hello,{" "}
+              <b className="break-words">
+                {profile?.data?.fullName || "Sabbir"}
+              </b>
             </span>
             {/* Show only on mobile */}
             <span className="sm:hidden mr-2 text-gray-700 text-xs">
-              <b>{profile?.data?.name?.split(' ')[0] || "Sabbir"}</b>
+              <b>{profile?.data?.fullName?.split(" ")[0] || "Sabbir"}</b>
             </span>
             <Avatar
-              src={profile?.data?.image ? getImageUrl(profile?.data?.image) : `/avator2.png`}
+              src={
+                profile?.data?.profile
+                  ? `${getImageUrl(profile?.data?.profile)}`
+                  : `/avator2.png`
+              }
               size={isMobile ? 28 : 32}
               className="flex-shrink-0"
             />
@@ -288,7 +317,9 @@ const Navber = () => {
           <Badge
             count={unreadCount}
             className="cursor-pointer"
-            onClick={() => isMobile ? setDrawerVisible(true) : setVisible(!visible)}
+            onClick={() =>
+              isMobile ? setDrawerVisible(true) : setVisible(!visible)
+            }
             ref={iconRef}
             size={isMobile ? "small" : "default"}
           >
