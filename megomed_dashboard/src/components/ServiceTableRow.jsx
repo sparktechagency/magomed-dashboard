@@ -365,6 +365,17 @@ const ServiceTableRow = ({ item, list }) => {
           {/* Service Details */}
           <div className="border border-primary p-6 rounded-lg">
             <div className="space-y-4">
+              {/* Service Image */}
+              <div className="flex justify-center mb-4">
+                <div className="w-48 h-32 border-2 border-primary rounded-md overflow-hidden">
+                  <img
+                    src={`${baseURLImage}${item.image}`}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-1 items-center py-2">
                 <span className="font-medium">Service Name:</span>
                 <span>{item.name}</span>
