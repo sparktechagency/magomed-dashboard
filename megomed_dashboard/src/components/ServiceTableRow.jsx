@@ -1,18 +1,19 @@
 import {
   CloseOutlined,
   DeleteOutlined,
-  EyeOutlined,
   EditOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
-import { Button, Modal, Switch, message, Input } from "antd";
+import { Button, Modal, Switch, message, Input, Upload } from "antd";
 import { useState } from "react";
 import {
-  useUpdateCategoryStatusMutation,
-  useDeleteCategoryMutation,
-  useUpdateCategoryMutation,
-} from "../features/category/categoryApi";
+  useUpdateServiceStatusMutation,
+  useDeleteServiceMutation,
+  useUpdateServiceMutation,
+} from "../features/service/serviceApi";
+import { baseURLImage } from "../utils/BaseURL";
 
-const CategoryTableRow = ({ item, list }) => {
+const ServiceTableRow = ({ item, list }) => {
   const [switchModalVisible, setSwitchModalVisible] = useState(false);
   const [removeModalVisible, setRemoveModalVisible] = useState(false);
   const [userDetailsModalVisible, setUserDetailsModalVisible] = useState(false);
@@ -20,13 +21,43 @@ const CategoryTableRow = ({ item, list }) => {
 
   const [currentStatus, setCurrentStatus] = useState(item.isActive);
   const [editedName, setEditedName] = useState(item.name);
+  const [editedImage, setEditedImage] = useState(null);
+  const [fileList, setFileList] = useState(
+    item.image
+      ? [
+          {
+            uid: "-1",
+            name: "existing-image",
+            status: "done",
+            url: `${baseURLImage}${item.image}`,
+          },
+        ]
+      : []
+  );
 
-  const [updateCategoryStatus, { isLoading: isStatusUpdating }] =
-    useUpdateCategoryStatusMutation();
-  const [deleteCategory, { isLoading: isDeleting }] =
-    useDeleteCategoryMutation();
-  const [updateCategory, { isLoading: isUpdating }] =
-    useUpdateCategoryMutation();
+  const [updateServiceStatus, { isLoading: isStatusUpdating }] =
+    useUpdateServiceStatusMutation();
+  const [deleteService, { isLoading: isDeleting }] = useDeleteServiceMutation();
+  const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
+
+  const handleEdit = () => {
+    // Reset edit states
+    setEditedName(item.name);
+    setEditedImage(null);
+    setFileList(
+      item.image
+        ? [
+            {
+              uid: "-1",
+              name: "existing-image",
+              status: "done",
+              url: `${baseURLImage}${item.image}`,
+            },
+          ]
+        : []
+    );
+    setEditModalVisible(true);
+  };
 
   const handleViewDetails = () => {
     setUserDetailsModalVisible(true);
@@ -40,61 +71,136 @@ const CategoryTableRow = ({ item, list }) => {
     setRemoveModalVisible(true);
   };
 
-  const handleEdit = () => {
-    setEditModalVisible(true);
-  };
-
   const handleConfirmSwitch = async () => {
     try {
       const newStatus = !currentStatus;
-      await updateCategoryStatus({
+      console.log("Attempting to update service status:", {
+        id: item._id,
+        currentStatus,
+        newStatus,
+      });
+
+      const updateResponse = await updateServiceStatus({
         id: item._id,
         isActive: newStatus,
       }).unwrap();
 
+      console.log("Service status update response:", updateResponse);
+
       setCurrentStatus(newStatus);
       message.success(
-        `Category status updated to ${newStatus ? "active" : "inactive"}`
+        `Service status updated to ${newStatus ? "active" : "inactive"}`
       );
       setSwitchModalVisible(false);
     } catch (err) {
-      message.error("Failed to update category status");
+      console.error("Status update error details:", {
+        errorObject: err,
+        itemId: item._id,
+        errorMessage: err?.message,
+        errorData: err?.data,
+      });
+
+      const errorMessage =
+        err?.data?.message || err?.message || "Failed to update service status";
+
+      message.error(errorMessage);
     }
   };
 
   const handleConfirmDelete = async () => {
     try {
-      // Ensure the delete mutation is called with the correct ID
-      await deleteCategory(item._id).unwrap();
+      // Log the ID being used for deletion
+      console.log("Attempting to delete service with ID:", item._id);
 
-      message.success("Category deleted successfully");
+      // Use the correct mutation with the service ID
+      const deleteResponse = await deleteService(item._id).unwrap();
+
+      // Log the response from the delete operation
+      console.log("Delete service response:", deleteResponse);
+
+      message.success("Service deleted successfully");
       setRemoveModalVisible(false);
     } catch (error) {
       // More detailed error handling
-      console.error("Delete error:", error);
-      message.error(
-        error?.data?.message || error?.message || "Failed to delete category"
-      );
+      console.error("Delete error details:", {
+        errorObject: error,
+        itemId: item._id,
+        errorMessage: error?.message,
+        errorData: error?.data,
+      });
+
+      // Specific error messages based on different error types
+      const errorMessage =
+        error?.data?.message || error?.message || "Failed to delete service";
+
+      message.error(errorMessage);
     }
   };
 
+  // Handle file upload for edit
+  const handleFileChange = (info) => {
+    let newFileList = [...info.fileList];
+
+    // Limit to one file
+    newFileList = newFileList.slice(-1);
+
+    // Validate file type and size
+    newFileList = newFileList
+      .map((file) => {
+        if (file.type && !file.type.startsWith("image/")) {
+          message.error("You can only upload image files!");
+          return null;
+        }
+
+        if (file.size && file.size / 1024 / 1024 > 2) {
+          message.error("Image must be smaller than 2MB!");
+          return null;
+        }
+
+        return file;
+      })
+      .filter((file) => file !== null);
+
+    setFileList(newFileList);
+
+    // Set the file for upload if it's a new file
+    if (newFileList.length > 0 && newFileList[0].originFileObj) {
+      setEditedImage(newFileList[0].originFileObj);
+    }
+  };
+
+  // Custom upload method to prevent default upload behavior
+  const handleUpload = (options) => {
+    const { onSuccess } = options;
+    onSuccess("ok");
+  };
+
   const handleConfirmEdit = async () => {
-    // Validate category name
+    // Validate service name
     if (!editedName.trim()) {
-      message.error("Category name cannot be empty");
+      message.error("Service name cannot be empty");
       return;
     }
 
     try {
-      await updateCategory({
+      // Create FormData to send multipart/form-data
+      const formData = new FormData();
+      formData.append("name", editedName.trim());
+
+      // Only append image if a new image is selected
+      if (editedImage) {
+        formData.append("image", editedImage);
+      }
+
+      await updateService({
         id: item._id,
-        data: { name: editedName.trim() },
+        data: formData,
       }).unwrap();
 
-      message.success("Category updated successfully");
+      message.success("Service updated successfully");
       setEditModalVisible(false);
     } catch (error) {
-      message.error(error?.data?.message || "Failed to update category");
+      message.error(error?.data?.message || "Failed to update service");
     }
   };
 
@@ -109,9 +215,16 @@ const CategoryTableRow = ({ item, list }) => {
 
   return (
     <>
-      <div className="grid grid-cols-5 my-3 text-sm bg-gray-100 rounded-lg whitespace-nowrap">
+      <div className="grid grid-cols-6 my-3 text-sm bg-gray-100 rounded-lg whitespace-nowrap">
         <div className="py-3 text-center">{list}</div>
         <div className="px-3 py-3 text-center">{item.name}</div>
+        <div className=" p-0.5 mx-auto border-2 border-primary rounded-md">
+          <img
+            src={`${baseURLImage}${item.image}`}
+            alt={item.name}
+            className="w-20 h-10 rounded-md object-cover "
+          />
+        </div>
         <div className="px-4 py-3 text-center">
           {formatDate(item.createdAt)}
         </div>
@@ -122,7 +235,7 @@ const CategoryTableRow = ({ item, list }) => {
         >
           {currentStatus === true ? "Active" : "Inactive"}
         </div>
-        <div className="mx-auto w-1/2 flex items-center justify-end gap-2 border rounded border-primary px-1 ">
+        <div className="mx-auto  flex items-center justify-end gap-2 border rounded border-primary px-1 ">
           <Button
             type="text"
             icon={<EyeOutlined style={{ fontSize: "18px" }} />}
@@ -132,7 +245,7 @@ const CategoryTableRow = ({ item, list }) => {
           <Button
             type="text"
             icon={<EditOutlined style={{ fontSize: "18px" }} />}
-            className="text-blue-500 hover:text-blue-600"
+            className="text-primary hover:text-primary w-32"
             onClick={handleEdit}
           />
           <Switch
@@ -150,47 +263,6 @@ const CategoryTableRow = ({ item, list }) => {
         </div>
       </div>
 
-      {/* Edit Category Modal */}
-      <Modal
-        title="Edit Category"
-        open={editModalVisible}
-        onCancel={() => {
-          setEditModalVisible(false);
-          setEditedName(item.name);
-        }}
-        footer={[
-          <Button
-            key="cancel"
-            onClick={() => {
-              setEditModalVisible(false);
-              setEditedName(item.name);
-            }}
-          >
-            Cancel
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            loading={isUpdating}
-            onClick={handleConfirmEdit}
-          >
-            Save
-          </Button>,
-        ]}
-      >
-        <div className="py-4">
-          <label className="block mb-2 text-sm font-medium text-gray-700">
-            Category Name
-          </label>
-          <Input
-            placeholder="Enter category name"
-            value={editedName}
-            onChange={(e) => setEditedName(e.target.value)}
-            className="w-full"
-          />
-        </div>
-      </Modal>
-
       {/* Switch Confirmation Modal */}
       <Modal
         open={switchModalVisible}
@@ -203,8 +275,8 @@ const CategoryTableRow = ({ item, list }) => {
         <div className="text-center py-4">
           <p className="text-lg font-medium mb-6">
             {currentStatus === true
-              ? "Are you sure Turn off this Category?"
-              : "Are you sure Turn on this Category?"}
+              ? "Are you sure Turn off this Service?"
+              : "Are you sure Turn on this Service?"}
           </p>
           <div className="flex justify-center gap-4">
             <Button
@@ -236,7 +308,7 @@ const CategoryTableRow = ({ item, list }) => {
       >
         <div className="text-center py-4">
           <p className="text-base font-medium text-black mb-6">
-            Are you sure you want to remove this Category?
+            Are you sure you want to remove this Service?
           </p>
           <div className="flex justify-center gap-4">
             <Button
@@ -257,7 +329,7 @@ const CategoryTableRow = ({ item, list }) => {
         </div>
       </Modal>
 
-      {/* Category Details Modal */}
+      {/* Service Details Modal */}
       <Modal
         open={userDetailsModalVisible}
         onCancel={() => setUserDetailsModalVisible(false)}
@@ -287,14 +359,14 @@ const CategoryTableRow = ({ item, list }) => {
 
           {/* Modal Header */}
           <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold mb-4">Category Information</h2>
+            <h2 className="text-xl font-semibold mb-4">Service Information</h2>
           </div>
 
-          {/* Category Details */}
+          {/* Service Details */}
           <div className="border border-primary p-6 rounded-lg">
             <div className="space-y-4">
               <div className="flex gap-1 items-center py-2">
-                <span className="font-medium">Category Name:</span>
+                <span className="font-medium">Service Name:</span>
                 <span>{item.name}</span>
               </div>
 
@@ -322,8 +394,59 @@ const CategoryTableRow = ({ item, list }) => {
           </div>
         </div>
       </Modal>
+
+      {/* Edit Service Modal */}
+      <Modal
+        title="Edit Service"
+        open={editModalVisible}
+        onCancel={() => setEditModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setEditModalVisible(false)}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={isUpdating}
+            onClick={handleConfirmEdit}
+          >
+            Save
+          </Button>,
+        ]}
+      >
+        <div className="py-4 space-y-4">
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">
+              Service Name
+            </label>
+            <Input
+              placeholder="Enter service name"
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">
+              Service Image
+            </label>
+            <Upload
+              listType="picture"
+              fileList={fileList}
+              onChange={handleFileChange}
+              customRequest={handleUpload}
+              accept="image/*"
+              maxCount={1}
+              beforeUpload={() => false} // Prevent auto upload
+            >
+              <Button>Click to Upload</Button>
+            </Upload>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };
 
-export default CategoryTableRow;
+export default ServiceTableRow;

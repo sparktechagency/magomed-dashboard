@@ -9,6 +9,11 @@ export const menuDatas = [
     title: "Category Management",
     link: "/category",
   },
+  {
+    icon: "/icons/sidebar/service.png",
+    title: "Service Management",
+    link: "/service",
+  },
 
   {
     icon: "/icons/sidebar/user.png",
@@ -29,7 +34,7 @@ export const menuDatas = [
   },
 
   {
-    icon: "/icons/sidebar/service.png",
+    icon: "/icons/sidebar/support.png",
     title: "Support",
     link: "/support",
   },

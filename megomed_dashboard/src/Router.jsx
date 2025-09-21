@@ -23,6 +23,7 @@ import TermsConditions from "./pages/TermsConditions";
 import UserManagement from "./pages/UserManagement/UserManagement";
 import WorldMap from "./pages/WorldMap/WorldMap";
 import Category from "./pages/category/category";
+import Service from "./pages/service/Service";
 
 const Routers = () => {
   return (
@@ -52,6 +53,7 @@ const Routers = () => {
           <Route path="settings" element={<Settings />} />
           <Route path="subscription" element={<SubscriptionManagement />} />
           <Route path="category" element={<Category />} />
+          <Route path="service" element={<Service />} />
           <Route path="earning" element={<Earning />} />
           <Route path="notification" element={<Notification />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} />
