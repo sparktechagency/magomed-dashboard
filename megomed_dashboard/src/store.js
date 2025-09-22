@@ -25,6 +25,11 @@ export const store = configureStore({
     ids: idReducer, // Add the ID slice to store
     ...Object.fromEntries(apis.map((api) => [api.reducerPath, api.reducer])),
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(apis.map((api) => api.middleware)),
+  middleware: (getDefaultMiddleware) => {
+    // Deduplicate middleware references (many feature APIs may share the same baseApi)
+    const uniqueApiMiddleware = Array.from(
+      new Set(apis.map((api) => api.middleware))
+    );
+    return getDefaultMiddleware().concat(uniqueApiMiddleware);
+  },
 });
