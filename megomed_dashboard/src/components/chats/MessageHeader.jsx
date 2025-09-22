@@ -1,22 +1,31 @@
-import { Avatar, Button } from 'antd';
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Avatar, Button } from "antd";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useGetChatListQuery } from "../../features/supportChat/supportChatApi";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 const MessageHeader = () => {
   const { id } = useParams();
+  const { data: chatListResponse } = useGetChatListQuery();
   const [timer, setTimer] = useState({
     days: 0,
     hours: 1,
     mins: 15,
-    secs: 30
+    secs: 30,
   });
+
+  // Find the current chat data
+  const currentChat = chatListResponse?.data?.find(
+    (chatItem) => chatItem.chat._id === id
+  );
+  const participant = currentChat?.chat?.participants?.[0];
 
   // Countdown timer effect
   useEffect(() => {
     if (!id) return;
 
     const interval = setInterval(() => {
-      setTimer(prevTimer => {
+      setTimer((prevTimer) => {
         let { days, hours, mins, secs } = prevTimer;
 
         if (secs > 0) {
@@ -43,7 +52,7 @@ const MessageHeader = () => {
   }, [id]);
 
   const formatTime = (time) => {
-    return time.toString().padStart(2, '0');
+    return time.toString().padStart(2, "0");
   };
 
   if (!id) return null;
@@ -55,7 +64,10 @@ const MessageHeader = () => {
         <div className="flex items-center gap-3">
           <div className="relative">
             <Avatar
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=face"
+              src={
+                getImageUrl(participant?.profile) ||
+                "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=face"
+              }
               size={60}
               className="border-2 border-white shadow-sm"
             />
@@ -64,19 +76,23 @@ const MessageHeader = () => {
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-gray-900">Larry</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {participant?.fullName || "Unknown User"}
+              </h3>
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             </div>
-            <p className="text-sm text-gray-600">Larry is Typing....</p>
+            <p className="text-sm text-gray-600">
+              {participant?.role === "freelancer" ? "Freelancer" : "Client"}
+            </p>
           </div>
         </div>
 
         {/* Center Section - Delivery Timer */}
-        <div className="flex flex-col items-center">
+        {/* <div className="flex flex-col items-center">
           <h4 className="text-sm font-medium text-gray-700 mb-2">Delivery Date</h4>
 
           <div className="flex items-center gap-2">
-            {/* Days */}
+       
             <div className="flex flex-col items-center">
               <div className="bg-gray-100 rounded-lg px-3 py-2 min-w-[50px] text-center">
                 <span className="text-xl font-bold text-gray-900">
@@ -88,7 +104,7 @@ const MessageHeader = () => {
 
             <span className="text-xl font-bold text-gray-400 pb-6">:</span>
 
-            {/* Hours */}
+    
             <div className="flex flex-col items-center">
               <div className="bg-gray-100 rounded-lg px-3 py-2 min-w-[50px] text-center">
                 <span className="text-xl font-bold text-gray-900">
@@ -100,7 +116,6 @@ const MessageHeader = () => {
 
             <span className="text-xl font-bold text-gray-400 pb-6">:</span>
 
-            {/* Minutes */}
             <div className="flex flex-col items-center">
               <div className="bg-gray-100 rounded-lg px-3 py-2 min-w-[50px] text-center">
                 <span className="text-xl font-bold text-gray-900">
@@ -112,7 +127,6 @@ const MessageHeader = () => {
 
             <span className="text-xl font-bold text-gray-400 pb-6">:</span>
 
-            {/* Seconds */}
             <div className="flex flex-col items-center">
               <div className="bg-gray-100 rounded-lg px-3 py-2 min-w-[50px] text-center">
                 <span className="text-xl font-bold text-gray-900">
@@ -122,10 +136,10 @@ const MessageHeader = () => {
               <span className="text-xs text-gray-500 mt-1">Secs</span>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Right Section - Action Buttons */}
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <Button
             type="default"
             className="border-gray-300 text-gray-700 hover:border-blue-400 hover:text-blue-600 px-4 py-2 h-auto"
@@ -149,7 +163,7 @@ const MessageHeader = () => {
           >
             View All Project
           </Button>
-        </div>
+        </div> */}
       </div>
     </div>
   );
