@@ -3,84 +3,46 @@ import { Spin, Tag } from "antd";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
-// import { useProfileQuery } from "../features/profile/profileApi";
-// import {
-//   useGetNotificationQuery,
-//   useReadNotificationMutation,
-// } from "../features/notification/notification";
-// import io from "socket.io-client";
+import {
+  useGetNotificationQuery,
+  useReadNotificationSingleMutation,
+  useReadNotificationAllMutation,
+} from "../features/notification/notification";
 import moment from "moment";
-// import { baseURL } from "../utils/BaseURL";
 
 const NotificationPopup = () => {
   const path = useLocation();
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(false); // Changed to false since we're using demo data
-  const socketRef = useRef(null);
+  const [loading, setLoading] = useState(false);
   const popupRef = useRef(null);
   const iconRef = useRef(null);
 
-  // Demo profile data
-  const profile = {
-    data: {
-      _id: "demo-user-id",
-      name: "Demo User",
-      email: "demo@example.com"
-    }
-  };
+  const {
+    data: notifications,
+    refetch,
+    isLoading,
+  } = useGetNotificationQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
 
-  // Demo notifications data
-  const demoNotifications = {
-    data: {
-      result: []
-    }
-  };
+  const [readSingle, { isLoading: updateSingleLoading }] =
+    useReadNotificationSingleMutation();
 
-  // const { data: profile } = useProfileQuery();
-  // const {
-  //   data: notifications,
-  //   refetch,
-  //   isLoading,
-  // } = useGetNotificationQuery(undefined, {
-  //   refetchOnFocus: true,
-  //   refetchOnReconnect: true,
-  // });
+  const [readAll, { isLoading: updateAllLoading }] =
+    useReadNotificationAllMutation();
 
-  // const [readNotification, { isLoading: updateLoading }] =
-  //   useReadNotificationMutation();
+  // Debug logging to see what's coming from the API
+  useEffect(() => {
+    console.log("Notification datasss:", notifications);
+  }, [notifications]);
 
   useEffect(() => {
-    // socketRef.current = io(baseURL);
-
-    // socketRef.current.on("connect", () => {});
-
-    // const handleNewNotification = (notification) => {
-    //   refetch();
-    // };
-
-    // socketRef.current.on(
-    //   `notification::${localStorage.getItem("adminLoginId")}`,
-    //   handleNewNotification
-    // );
-
-    return () => {
-      // if (socketRef.current) {
-        // socketRef.current.off("connect");
-        // socketRef.current.off(
-        //   `notification::${localStorage.getItem("adminLoginId")}`,
-        //   handleNewNotification
-        // );
-        // socketRef.current.disconnect();
-      // }
-    };
-  }, []); // removed refetch from dependencies
-
-  // useEffect(() => {
-  //   if (!isLoading) {
-  //     setLoading(false);
-  //   }
-  // }, [isLoading]);
+    if (!isLoading) {
+      setLoading(false);
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -118,25 +80,25 @@ const NotificationPopup = () => {
   };
 
   const handleNotificationClick = async (notification) => {
+    // Just view the notification, don't mark as read automatically
+    console.log("Notification clicked:", notification._id);
+  };
+
+  const handleMarkAsRead = async (notificationId) => {
     try {
-      // if (!notification.read) {
-      //   await readNotification(notification._id);
-      // }
-      // refetch();
-      
-      // For demo purposes, we'll just log the action
-      console.log("Notification clicked:", notification._id);
+      await readSingle(notificationId);
+      refetch();
     } catch (error) {
-      console.error("Error updating notification:", error);
+      console.error("Error marking notification as read:", error);
     }
   };
 
   const formatTime = (timestamp) => {
-     if (!timestamp) return "Just now";
-       
-     const bangladeshTime = moment(timestamp).add(6, 'hours');
-       
-     return bangladeshTime.fromNow();
+    if (!timestamp) return "Just now";
+
+    const bangladeshTime = moment(timestamp).add(6, "hours");
+
+    return bangladeshTime.fromNow();
   };
 
   const getTypeColor = (type) => {
@@ -152,18 +114,56 @@ const NotificationPopup = () => {
     }
   };
 
-  // Calculate unread count from demo data
-  const unreadCount = demoNotifications.data.result.filter(notif => !notif.read).length;
+  // Normalize API response - handle all possible formats
+  let normalized = [];
+  let unreadCount = 0;
+
+  if (notifications?.data) {
+    // Check which response format we have
+    if (notifications.data.data?.result) {
+      // Format: { data: { data: { result: [...] } } }
+      const container = notifications.data.data;
+      const raw = container.result || [];
+      normalized = raw.map((n) => ({
+        _id: n?._id,
+        text: n?.message,
+        type: n?.type ? String(n.type).toUpperCase() : undefined,
+        read: !!n?.isRead,
+        createdAt: n?.createdAt,
+      }));
+      unreadCount =
+        container.unReadCount ?? normalized.filter((n) => !n.read).length;
+    } else if (Array.isArray(notifications.data.result)) {
+      // Format: { data: { result: [...] } }
+      const raw = notifications.data.result || [];
+      normalized = raw.map((n) => ({
+        _id: n?._id,
+        text: n?.message,
+        type: n?.type ? String(n.type).toUpperCase() : undefined,
+        read: !!n?.isRead,
+        createdAt: n?.createdAt,
+      }));
+      unreadCount = normalized.filter((n) => !n.read).length;
+    } else if (Array.isArray(notifications.data)) {
+      // Format: { data: [...] } - Direct array in data
+      const raw = notifications.data || [];
+      normalized = raw.map((n) => ({
+        _id: n?._id,
+        text: n?.message,
+        type: n?.type ? String(n.type).toUpperCase() : undefined,
+        read: !!n?.isRead,
+        createdAt: n?.createdAt,
+      }));
+      unreadCount = normalized.filter((n) => !n.read).length;
+    }
+  }
+
+  console.log("Normalized notifications:", normalized);
 
   const markAllAsRead = async () => {
     try {
-      // await Promise.all(
-      //   notifications.data.result.map((notif) => readNotification(notif._id))
-      // );
-      // refetch();
-      
-      // For demo purposes, we'll just log the action
-      console.log("Mark all as read clicked");
+      await readAll();
+      refetch();
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
@@ -180,14 +180,26 @@ const NotificationPopup = () => {
         className="w-full p-10 bg-white border border-gray-200 rounded-xl"
       >
         <div>
-          <div className="w-full cursor-pointer">
-            {loading ? ( // removed updateLoading since we're not using the mutation
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg">Notifications</h3>
+            {normalized.length > 0 && (
+              <button
+                onClick={markAllAsRead}
+                disabled={updateAllLoading}
+                className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+              >
+                {updateAllLoading ? "Marking..." : "Mark All as Read"}
+              </button>
+            )}
+          </div>
+          <div className="w-full">
+            {loading ? (
               <div className="flex justify-center py-4">
                 <Spin size="default" />
               </div>
-            ) : demoNotifications.data.result.length === 0 ? (
+            ) : normalized.length === 0 ? (
               <div className="text-center text-gray-500">
-                <h3 className="text-start font-bold text-lg leading-[26px] pb-[70px]">Notifications</h3>
+                <div className="pb-[70px]"></div>
                 <div className="flex justify-center">
                   <img
                     src={"/images/notification.png"}
@@ -204,17 +216,19 @@ const NotificationPopup = () => {
                 </p>
               </div>
             ) : (
-              demoNotifications.data.result.map((notif, index) => (
+              normalized.map((notif, index) => (
                 <div
                   key={notif._id || index}
                   className={`flex items-start p-3 transition duration-300 border-b border-gray-100 hover:bg-gray-50 ${
                     !notif.read ? "bg-blue-50" : ""
                   }`}
-                  onClick={() => handleNotificationClick(notif)}
                 >
-                  <div className="flex-1">
+                  <div
+                    className="flex-1"
+                    onClick={() => handleNotificationClick(notif)}
+                  >
                     <div className="flex items-center justify-between mb-1">
-                      {notif.showAlert && notif.type && (
+                      {notif.type && (
                         <Tag color={getTypeColor(notif.type)}>{notif.type}</Tag>
                       )}
                       <span className="ml-auto text-xs text-gray-500">
@@ -228,9 +242,22 @@ const NotificationPopup = () => {
                     >
                       {notif.text}
                     </p>
-                    {notif.read && !notif.showAlert && (
+                    {notif.read ? (
                       <div className="flex items-center mt-1 text-xs text-gray-500">
                         <CheckCircleOutlined className="mr-1" /> Read
+                      </div>
+                    ) : (
+                      <div className="flex justify-end mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMarkAsRead(notif._id);
+                          }}
+                          disabled={updateSingleLoading}
+                          className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-xs rounded border border-gray-300"
+                        >
+                          Mark as Read
+                        </button>
                       </div>
                     )}
                   </div>

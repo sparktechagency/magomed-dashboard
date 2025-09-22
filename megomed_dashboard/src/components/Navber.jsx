@@ -8,7 +8,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import {
   useGetNotificationQuery,
-  useReadNotificationMutation,
+  useReadNotificationSingleMutation,
+  useReadNotificationAllMutation,
 } from "../features/notification/notification";
 import { useProfileQuery } from "../features/profile/profileApi";
 import { baseURL, baseURLImage } from "../utils/BaseURL";
@@ -37,8 +38,11 @@ const Navber = () => {
     refetchOnReconnect: true,
   });
 
-  const [readNotification, { isLoading: updateLoading }] =
-    useReadNotificationMutation();
+  const [readSingle, { isLoading: updateSingleLoading }] =
+    useReadNotificationSingleMutation();
+
+  const [readAll, { isLoading: updateAllLoading }] =
+    useReadNotificationAllMutation();
 
   // Check for mobile device
   useEffect(() => {
@@ -129,7 +133,7 @@ const Navber = () => {
   const handleNotificationClick = async (notification) => {
     try {
       if (!notification.read) {
-        await readNotification(notification._id);
+        await readSingle(notification._id);
       }
       refetch();
     } catch (error) {
@@ -162,21 +166,60 @@ const Navber = () => {
     }
   };
 
-  const unreadCount =
-    notifications?.data?.result.filter((notif) => !notif.read).length || 0;
+  // Normalize API response shape - handle multiple formats
+  let normalizedNotifications = [];
+  let unreadCount = 0;
+
+  if (notifications?.data) {
+    if (notifications.data.data?.result) {
+      // Format: { data: { data: { result: [...], unReadCount } } }
+      const apiContainer = notifications.data.data;
+      const rawNotifications = apiContainer.result || [];
+      normalizedNotifications = rawNotifications.map((n) => ({
+        _id: n?._id,
+        text: n?.message,
+        type: n?.type ? String(n.type).toUpperCase() : undefined,
+        read: !!n?.isRead,
+        createdAt: n?.createdAt,
+      }));
+      unreadCount =
+        apiContainer.unReadCount ??
+        normalizedNotifications.filter((n) => !n.read).length;
+    } else if (Array.isArray(notifications.data.result)) {
+      // Format: { data: { result: [...] } }
+      const rawNotifications = notifications.data.result || [];
+      normalizedNotifications = rawNotifications.map((n) => ({
+        _id: n?._id,
+        text: n?.message,
+        type: n?.type ? String(n.type).toUpperCase() : undefined,
+        read: !!n?.isRead,
+        createdAt: n?.createdAt,
+      }));
+      unreadCount = normalizedNotifications.filter((n) => !n.read).length;
+    } else if (Array.isArray(notifications.data)) {
+      // Format: { data: [...] } - Direct array in data
+      const rawNotifications = notifications.data;
+      normalizedNotifications = rawNotifications.map((n) => ({
+        _id: n?._id,
+        text: n?.message,
+        type: n?.type ? String(n.type).toUpperCase() : undefined,
+        read: !!n?.isRead,
+        createdAt: n?.createdAt,
+      }));
+      unreadCount = normalizedNotifications.filter((n) => !n.read).length;
+    }
+  }
 
   const markAllAsRead = async () => {
     try {
-      await Promise.all(
-        notifications.data.result.map((notif) => readNotification(notif._id))
-      );
+      await readAll();
       refetch();
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
   };
 
-  const getNotification = notifications?.data?.result || [];
+  const getNotification = normalizedNotifications;
 
   // Notification content component to avoid duplication
   const NotificationContent = ({ inDrawer = false }) => (
@@ -215,14 +258,16 @@ const Navber = () => {
         getNotification.map((notif, index) => (
           <div
             key={notif._id || index}
-            className={`flex items-start p-3 transition duration-300 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
+            className={`flex items-start p-3 transition duration-300 border-b border-gray-100 hover:bg-gray-50 ${
               !notif.read ? "bg-blue-50" : ""
             }`}
-            onClick={() => handleNotificationClick(notif)}
           >
-            <div className="flex-1">
+            <div
+              className="flex-1 cursor-pointer"
+              onClick={() => handleNotificationClick(notif)}
+            >
               <div className="flex items-center justify-between mb-1 flex-wrap">
-                {notif.showAlert && notif.type && (
+                {notif.type && (
                   <Tag color={getTypeColor(notif.type)} className="text-xs">
                     {notif.type}
                   </Tag>
@@ -238,11 +283,23 @@ const Navber = () => {
               >
                 {notif.text}
               </p>
-              {notif.read && !notif.showAlert && (
-                <div className="flex items-center mt-1 text-xs text-gray-500">
-                  <CheckCircleOutlined className="mr-1" /> Read
-                </div>
-              )}
+              <div className="flex items-center justify-between mt-1">
+                {notif.read ? (
+                  <div className="flex items-center text-xs text-gray-500">
+                    <CheckCircleOutlined className="mr-1" /> Read
+                  </div>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMarkAsRead(notif._id, e);
+                    }}
+                    className="ml-auto text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300"
+                  >
+                    Mark as Read
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))
@@ -342,7 +399,12 @@ const Navber = () => {
               className="p-0"
               extra={
                 unreadCount > 0 && (
-                  <Button size="small" type="link" onClick={markAllAsRead}>
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={markAllAsRead}
+                    loading={updateAllLoading}
+                  >
                     Mark all as read
                   </Button>
                 )
@@ -388,7 +450,12 @@ const Navber = () => {
           <div className="flex items-center justify-between">
             <span>Notifications</span>
             {unreadCount > 0 && (
-              <Button size="small" type="link" onClick={markAllAsRead}>
+              <Button
+                size="small"
+                type="link"
+                onClick={markAllAsRead}
+                loading={updateAllLoading}
+              >
                 Mark all as read
               </Button>
             )}
