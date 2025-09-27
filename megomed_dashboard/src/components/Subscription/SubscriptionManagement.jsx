@@ -21,13 +21,13 @@ import {
 } from "../../features/subscription/subscriptionApi";
 
 function SubscriptionManagement() {
-  const [activeTab, setActiveTab] = useState("freelancher");
+  const [activeTab, setActiveTab] = useState("freelancer");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState(null);
   const [planName, setPlanName] = useState("");
   const [planPrice, setPlanPrice] = useState(0);
   const [planType, setPlanType] = useState("monthly");
-  const [planCategory, setPlanCategory] = useState("freelancher");
+  const [planCategory, setPlanCategory] = useState("freelancer");
   const [planFeatures, setPlanFeatures] = useState([]);
   const [planImage, setPlanImage] = useState(null);
   const [tenderCount, setTenderCount] = useState(3);
@@ -38,8 +38,8 @@ function SubscriptionManagement() {
   const [createSubscription] = useCreateSubscriptionMutation();
   const [updateSubscription] = useUpdateSubscriptionMutation();
 
-  const freelancherSubscriptions = subscriptions?.data?.filter(
-    (subscription) => subscription.category === "freelancher"
+  const freelancerSubscriptions = subscriptions?.data?.filter(
+    (subscription) => subscription.category === "freelancer"
   );
   const clientSubscriptions = subscriptions?.data?.filter(
     (subscription) => subscription.category === "client"
@@ -50,7 +50,7 @@ function SubscriptionManagement() {
     setPlanName("");
     setPlanPrice(0);
     setPlanType("monthly");
-    setPlanCategory(activeTab === "freelancher" ? "freelancher" : "client");
+    setPlanCategory(activeTab === "freelancer" ? "freelancer" : "client");
     setPlanFeatures([]);
     setPlanImage(null);
     setTenderCount(3);
@@ -84,7 +84,7 @@ function SubscriptionManagement() {
     setPlanName("");
     setPlanPrice(0);
     setPlanType("monthly");
-    setPlanCategory("freelancher");
+    setPlanCategory("freelancer");
     setPlanFeatures([]);
     setPlanImage(null);
     setTenderCount(3);
@@ -164,7 +164,7 @@ function SubscriptionManagement() {
       setPlanName("");
       setPlanPrice(0);
       setPlanType("monthly");
-      setPlanCategory("freelancher");
+      setPlanCategory("freelancer");
       setPlanFeatures([]);
       setPlanImage(null);
       setTenderCount(3);
@@ -225,11 +225,11 @@ function SubscriptionManagement() {
       <div className="mb-6 flex justify-between items-center">
         <div>
           <Button
-            type={activeTab === "freelancher" ? "primary" : "default"}
+            type={activeTab === "freelancer" ? "primary" : "default"}
             className={`mr-2 ${
-              activeTab === "freelancher" ? "bg-[#002282]" : ""
+              activeTab === "freelancer" ? "bg-[#002282]" : ""
             }`}
-            onClick={() => setActiveTab("freelancher")}
+            onClick={() => setActiveTab("freelancer")}
           >
             Freelancer
           </Button>
@@ -251,9 +251,9 @@ function SubscriptionManagement() {
       </div>
 
       <div className="rounded-md">
-        {activeTab === "freelancher" ? (
+        {activeTab === "freelancer" ? (
           <FreeLacherSubscription
-            subscriptions={freelancherSubscriptions}
+            subscriptions={freelancerSubscriptions}
             onEdit={handleEditSubscription}
           />
         ) : (
@@ -398,7 +398,7 @@ function SubscriptionManagement() {
                 value={planCategory}
                 onChange={(e) => setPlanCategory(e.target.value)}
               >
-                <Radio value="freelancher">Freelancer</Radio>
+                <Radio value="freelancer">Freelancer</Radio>
                 <Radio value="client">Client</Radio>
               </Radio.Group>
             </div>
