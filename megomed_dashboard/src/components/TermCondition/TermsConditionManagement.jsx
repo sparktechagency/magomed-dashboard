@@ -16,7 +16,7 @@ function TermsConditionManagement() {
             }`}
             onClick={() => setActiveTab("freelancher")}
           >
-            T&C
+            Refund Policy
           </Button>
           {/* <Button
             type={activeTab === "client" ? "primary" : "default"}

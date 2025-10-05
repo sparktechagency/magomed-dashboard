@@ -70,6 +70,9 @@ const CustomXAxisTick = ({ x, y, payload }) => {
 };
 
 export default function DeliveryAcceptedChart({ weeklyDeliveryAccepted = [] }) {
+  // Debug: Log the received data
+  console.log("DeliveryAcceptedChart - Received data:", weeklyDeliveryAccepted);
+
   // Transform the delivery data
   const chartData = useMemo(() => {
     if (!weeklyDeliveryAccepted || weeklyDeliveryAccepted.length === 0) {
@@ -84,16 +87,33 @@ export default function DeliveryAcceptedChart({ weeklyDeliveryAccepted = [] }) {
       ];
     }
 
+    // Create a map of all days of the week
+    const allDays = [
+      { day: "Sun", value: 0, fullDay: "Sunday" },
+      { day: "Mon", value: 0, fullDay: "Monday" },
+      { day: "Tue", value: 0, fullDay: "Tuesday" },
+      { day: "Wed", value: 0, fullDay: "Wednesday" },
+      { day: "Thu", value: 0, fullDay: "Thursday" },
+      { day: "Fri", value: 0, fullDay: "Friday" },
+      { day: "Sat", value: 0, fullDay: "Saturday" },
+    ];
+
     // Map the API data to chart format
-    return weeklyDeliveryAccepted.map((item) => {
+    weeklyDeliveryAccepted.forEach((item) => {
+      // Handle delivery data structure (dateHour, totalDeliveries)
       const date = new Date(item.dateHour);
-      const day = date.toLocaleDateString("en-US", { weekday: "short" });
-      return {
-        day: day,
-        value: item.totalDeliveries || 0,
-        fullDay: DAYS_MAP[day] || day,
-      };
+      const dayShort = date.toLocaleDateString("en-US", { weekday: "short" });
+      const value = item.totalDeliveries || 0;
+
+      // Find the corresponding day in our allDays array
+      const dayData = allDays.find((d) => d.day === dayShort);
+      if (dayData) {
+        dayData.value = value;
+      }
     });
+
+    console.log("DeliveryAcceptedChart - Transformed data:", allDays);
+    return allDays;
   }, [weeklyDeliveryAccepted]);
 
   // Calculate max value for dynamic Y-axis

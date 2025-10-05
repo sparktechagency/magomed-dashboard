@@ -39,5 +39,5 @@ export const removeToken = () => {
 };
 
 export const isAuthenticated = () => {
-  return !!getToken();
+  return !getToken();
 };

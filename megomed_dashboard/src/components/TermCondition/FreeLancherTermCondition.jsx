@@ -59,18 +59,14 @@ const FreeLancherTermCondition = () => {
       }).unwrap();
 
       if (result.success) {
-        message.success(
-          result.message || "Terms and conditions saved successfully!"
-        );
+        message.success(result.message || "Refund Policy saved successfully!");
       } else {
-        message.error(result.message || "Failed to save terms and conditions");
+        message.error(result.message || "Failed to save Refund Policy");
       }
     } catch (err) {
       console.error("Save error:", err);
       message.error(
-        err?.data?.message ||
-          err?.message ||
-          "Failed to save terms and conditions"
+        err?.data?.message || err?.message || "Failed to save Refund Policy"
       );
     } finally {
       setIsSaving(false);
@@ -245,7 +241,7 @@ const FreeLancherTermCondition = () => {
             onClick={handleSave}
             loading={isSaving || updateLoading}
           >
-            Save Terms and conditions
+            Save Refund Policy
           </Button>
         </div>
       </div>

@@ -28,12 +28,10 @@ export default function WeeklyEarningsChart({ weeklyEarnings }) {
       return [{ name: "Earnings", value: weeklyEarnings, color: "#10B981" }];
     }
 
-    // If weeklyEarnings is an array
+    // If weeklyEarnings is an array - handle the correct data structure
     return weeklyEarnings.map((item, index) => ({
-      name: new Date(item.dateHour).toLocaleDateString("en-US", {
-        weekday: "short",
-      }),
-      value: item.totalDeliveries || 0,
+      name: item.day || "Unknown", // Use the 'day' field from API
+      value: item.amount || 0, // Use the 'amount' field from API
       color: DEFAULT_COLORS[index % DEFAULT_COLORS.length],
     }));
   }, [weeklyEarnings]);

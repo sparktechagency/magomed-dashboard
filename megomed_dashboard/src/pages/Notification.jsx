@@ -23,8 +23,9 @@ const NotificationPopup = () => {
     refetch,
     isLoading,
   } = useGetNotificationQuery(undefined, {
-    refetchOnFocus: true,
-    refetchOnReconnect: true,
+    refetchOnFocus: false, // Disable refetch on focus to reduce API calls
+    refetchOnReconnect: true, // Keep refetch on reconnect for notifications
+    pollingInterval: 60000, // Poll every 60 seconds instead of constant refetching
   });
 
   const [readSingle, { isLoading: updateSingleLoading }] =

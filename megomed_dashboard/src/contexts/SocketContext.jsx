@@ -14,6 +14,7 @@ const socketURL = baseURL.replace("/api/v1", "");
 
 const SocketContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSocket = () => {
   const context = useContext(SocketContext);
   if (!context) {
@@ -26,8 +27,14 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const { token, isAuthenticated } = useAuth();
+  const [connectionTimeout, setConnectionTimeout] = useState(null);
 
   useEffect(() => {
+    // Clear any existing timeout
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+    }
+
     console.log("=== SOCKET EFFECT TRIGGERED ===");
     console.log("isAuthenticated:", isAuthenticated);
     console.log("token:", token ? "Present" : "Missing");
@@ -35,57 +42,66 @@ export const SocketProvider = ({ children }) => {
     console.log("===============================");
 
     if (isAuthenticated && token) {
-      // Initialize socket connection
-      console.log("=== INITIALIZING SOCKET ===");
-      console.log("Base URL:", baseURL);
-      console.log("Socket URL:", socketURL);
-      console.log("Token:", token ? "Present" : "Missing");
-      console.log("Is Authenticated:", isAuthenticated);
-      console.log("===========================");
-
-      const newSocket = io(socketURL, {
-        auth: {
-          token: token,
-        },
-        transports: ["websocket", "polling"],
-        timeout: 20000,
-        forceNew: true,
-      });
-
-      // Connection event handlers
-      newSocket.on("connect", () => {
-        console.log("=== SOCKET CONNECTED ===");
-        console.log("Socket ID:", newSocket.id);
+      // Add a small delay to prevent rapid reconnections
+      const timeout = setTimeout(() => {
+        // Initialize socket connection
+        console.log("=== INITIALIZING SOCKET ===");
+        console.log("Base URL:", baseURL);
         console.log("Socket URL:", socketURL);
-        console.log("Authentication Token:", token ? "Present" : "Missing");
-        console.log("=========================");
-        setIsConnected(true);
-      });
+        console.log("Token:", token ? "Present" : "Missing");
+        console.log("Is Authenticated:", isAuthenticated);
+        console.log("===========================");
 
-      newSocket.on("disconnect", (reason) => {
-        console.log("=== SOCKET DISCONNECTED ===");
-        console.log("Disconnect Reason:", reason);
-        console.log("============================");
-        setIsConnected(false);
-      });
+        const newSocket = io(socketURL, {
+          auth: {
+            token: token,
+          },
+          transports: ["websocket"], // Use only websocket to reduce resource usage
+          timeout: 10000, // Reduce timeout
+          forceNew: false, // Reuse connections when possible
+          autoConnect: true,
+          reconnection: true,
+          reconnectionAttempts: 3,
+          reconnectionDelay: 1000,
+        });
 
-      newSocket.on("connect_error", (error) => {
-        console.error("=== SOCKET CONNECTION ERROR ===");
-        console.error("Error:", error);
-        console.error("Error Message:", error.message);
-        console.error("Error Type:", error.type);
-        console.error("===============================");
-        setIsConnected(false);
-      });
+        // Connection event handlers
+        newSocket.on("connect", () => {
+          console.log("=== SOCKET CONNECTED ===");
+          console.log("Socket ID:", newSocket.id);
+          console.log("Socket URL:", socketURL);
+          console.log("Authentication Token:", token ? "Present" : "Missing");
+          console.log("=========================");
+          setIsConnected(true);
+        });
 
-      setSocket(newSocket);
+        newSocket.on("disconnect", (reason) => {
+          console.log("=== SOCKET DISCONNECTED ===");
+          console.log("Disconnect Reason:", reason);
+          console.log("============================");
+          setIsConnected(false);
+        });
 
-      // Cleanup on unmount
-      return () => {
-        newSocket.close();
-        setSocket(null);
-        setIsConnected(false);
-      };
+        newSocket.on("connect_error", (error) => {
+          console.error("=== SOCKET CONNECTION ERROR ===");
+          console.error("Error:", error);
+          console.error("Error Message:", error.message);
+          console.error("Error Type:", error.type);
+          console.error("===============================");
+          setIsConnected(false);
+        });
+
+        setSocket(newSocket);
+        setConnectionTimeout(timeout);
+
+        // Cleanup on unmount
+        return () => {
+          if (timeout) clearTimeout(timeout);
+          newSocket.close();
+          setSocket(null);
+          setIsConnected(false);
+        };
+      }, 500); // 500ms delay to prevent rapid reconnections
     } else {
       console.log("=== SOCKET NOT INITIALIZED ===");
       console.log("Reason: Not authenticated or no token");
@@ -93,7 +109,7 @@ export const SocketProvider = ({ children }) => {
       console.log("token:", token ? "Present" : "Missing");
       console.log("===============================");
     }
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Create stable socket helper functions with useCallback
   const emit = useCallback(

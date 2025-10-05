@@ -47,8 +47,8 @@ export const menuDatas = [
 
   {
     icon: "/icons/sidebar/terms.png",
-    title: "Terms & Conditions",
-    link: "/terms-conditions",
+    title: "Refund Policy",
+    link: "/refund-policy",
   },
   {
     icon: "/icons/sidebar/privacy.png",

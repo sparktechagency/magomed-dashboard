@@ -7,6 +7,7 @@ import ProjectManagement from "./pages/ProjectManagement/ProjectManagement";
 import Settings from "./components/Settings/Settings";
 import SubscriptionManagement from "./components/Subscription/SubscriptionManagement";
 import Layout from "./layouts/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
 import CheckEmail from "./pages/auth/CheckEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import SetPassword from "./pages/auth/SetPassword";
@@ -42,8 +43,14 @@ const Routers = () => {
         <Route path="/delete-account" element={<DeletePage />} />
 
         {/* Protected Routes inside layout */}
-        {/* <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}> */}
-        <Route path="/" element={<Layout />}>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="user-management" element={<UserManagement />} />
           {/* Driver Management with nested RequestTable */}
@@ -57,7 +64,7 @@ const Routers = () => {
           <Route path="earning" element={<Earning />} />
           <Route path="notification" element={<Notification />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="terms-conditions" element={<TermsConditions />} />
+          <Route path="refund-policy" element={<TermsConditions />} />
         </Route>
 
         {/* 404 fallback */}

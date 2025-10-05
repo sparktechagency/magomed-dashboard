@@ -2,10 +2,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { IoCloseOutline } from "react-icons/io5";
 import { FiEye } from "react-icons/fi";
+import { FiCopy } from "react-icons/fi";
 
 const EarningTableRow = ({ item, list }) => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [itemId, setItemId] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -22,6 +24,38 @@ const EarningTableRow = ({ item, list }) => {
     setIsViewModalOpen(false);
   };
 
+  const copyToClipboard = async (text, id) => {
+    try {
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for older browsers or non-HTTPS contexts
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textArea);
+
+        if (!successful) {
+          throw new Error("Copy command was unsuccessful");
+        }
+      }
+
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000); // Reset after 2 seconds
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+      // You could add a toast notification here to inform the user
+    }
+  };
+
   // Calculate days between dates
   const calculateDays = (startDate, endDate) => {
     if (!startDate || !endDate) return "N/A";
@@ -35,7 +69,7 @@ const EarningTableRow = ({ item, list }) => {
   return (
     <>
       {/* Table Row with Improved Alignment */}
-      <div className="grid items-center grid-cols-11 gap-2 px-2 my-3 text-sm bg-gray-100 rounded-lg whitespace-nowrap">
+      <div className="grid items-center grid-cols-10 gap-2 px-2 my-3 text-sm bg-gray-100 rounded-lg whitespace-nowrap">
         <div className="flex items-center justify-center py-3">{list}</div>
         <div className="flex items-center justify-center py-3">
           {item.userId?.fullName || "N/A"}
@@ -48,14 +82,44 @@ const EarningTableRow = ({ item, list }) => {
           {item.subcriptionId ? "Subscription Payment" : "Invoice Payment"}
         </div>
         <div className="flex items-center justify-center py-3">
-          {item.invoiceId || item.subcriptionId || "N/A"}
+          {(() => {
+            // Try multiple fields to get the full ID
+            const fullId =
+              item.invoiceId ||
+              item.subcriptionId ||
+              item.transactionId ||
+              item._id;
+            if (!fullId) return "N/A";
+            const shortId =
+              fullId.length > 6 ? `...${fullId.slice(-6)}` : fullId;
+            const isCopied = copiedId === fullId;
+            return (
+              <div className="flex items-center gap-1">
+                <span
+                  className="cursor-pointer hover:text-primary transition-colors"
+                  title={`Click to copy: ${fullId}`}
+                  onClick={() => copyToClipboard(fullId, fullId)}
+                >
+                  {shortId}
+                </span>
+                <FiCopy
+                  className={`w-3 h-3 cursor-pointer hover:text-primary transition-colors ${
+                    isCopied ? "text-green-500" : "text-gray-400"
+                  }`}
+                  title="Copy full ID"
+                  onClick={() => copyToClipboard(fullId, fullId)}
+                />
+                {isCopied && (
+                  <span className="text-xs text-green-500 ml-1">Copied!</span>
+                )}
+              </div>
+            );
+          })()}
         </div>
         <div className="flex items-center justify-center py-3">
           {item.paymentType || "N/A"}
         </div>
-        <div className="flex items-center justify-center py-3">
-          N/A {/* Working Days - no field in current response */}
-        </div>
+
         <div className="flex items-center justify-center py-3">
           ${item.amount || 0}
         </div>

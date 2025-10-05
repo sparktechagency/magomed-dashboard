@@ -9,7 +9,6 @@ import { setAuthData } from "../../features/auth/authSlice";
 const { Title, Text } = Typography;
 
 const LoginPage = () => {
-  const router = useNavigate();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -83,8 +82,27 @@ const LoginPage = () => {
           })
         );
 
+        // Set adminLoginId for compatibility - try multiple possible ID fields
+        console.log("Full response:", response); // Debug log to see full response
+        console.log("User object:", user); // Debug log to see user structure
+
+        const adminId =
+          user?.id ||
+          user?._id ||
+          user?.userId ||
+          user?.adminId ||
+          response.data?.id ||
+          response.data?._id ||
+          response.data?.userId ||
+          "admin";
+
+        localStorage.setItem("adminLoginId", adminId);
+        console.log("Set adminLoginId:", adminId); // Debug log
+
         message.success(response.message || "Login successful!");
-        router("/");
+
+        // Use navigate for client-side routing instead of window.location.href
+        navigate("/");
       } else {
         message.error(response.message || "Login failed. Please try again.");
       }

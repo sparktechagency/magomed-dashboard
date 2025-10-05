@@ -9,7 +9,7 @@ export default defineConfig({
     // port: 4174,
   },
   build: {
-    sourcemap: false,  // disables source maps for production
+    sourcemap: false, // disables source maps for production
     minify: "esbuild", // faster minifier
   },
-});  
+});

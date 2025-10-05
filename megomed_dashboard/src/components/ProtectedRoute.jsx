@@ -1,12 +1,13 @@
 import { Navigate } from "react-router-dom";
-import { isAuthenticated } from "../features/auth/authService";
+import { getToken, isAuthenticated } from "../features/auth/authService";
 
 const ProtectedRoute = ({ children }) => {
-  // Get the admin login status from localStorage
-  const isAdminLogin = localStorage.getItem("adminLoginId");
+  // Check if user is authenticated using the token
+  const isAuth = getToken();
+  console.log("isAuth", isAuth);
 
-  // If the user is not authenticated and no valid admin login exists, redirect to login
-  if (!isAuthenticated() || !isAdminLogin) {
+  // If the user is not authenticated, redirect to login
+  if (!isAuth) {
     return <Navigate to="/auth/login" replace />;
   }
 

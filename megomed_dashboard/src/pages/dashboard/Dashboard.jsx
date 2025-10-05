@@ -29,7 +29,7 @@ const Dashboard = () => {
   console.log("dashboardData", dashboardData);
 
   // Extract data with proper null checks
-  const weeklyEarnings = dashboardData?.data?.last7DaysEarning || 0;
+  const weeklyEarnings = dashboardData?.data?.last7DaysEarning || [];
   const weeklyDeliveryAccepted =
     dashboardData?.data?.last7DaysTotalDeliveryAcceptProject || [];
   const totalActiveProject =

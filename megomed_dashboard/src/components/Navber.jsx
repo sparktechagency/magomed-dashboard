@@ -80,7 +80,7 @@ const Navber = () => {
         socketRef.current.disconnect();
       }
     };
-  }, [refetch]);
+  }, []); // Removed refetch from dependencies to prevent infinite loop
 
   useEffect(() => {
     if (!isLoading) {

@@ -11,7 +11,6 @@ const columns = [
   "Project Name",
   "Invoice Number",
   "Service Type",
-  "Working Day",
   "Total Amount",
   "Revenue",
   "Status",
@@ -35,7 +34,7 @@ const Earning = () => {
       limit: 10,
       paymentType: category.toLowerCase(),
     });
-  }, [category, getEarningData]);
+  }, [category]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debug: Log the API response (remove in production)
   useEffect(() => {
