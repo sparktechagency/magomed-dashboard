@@ -53,33 +53,6 @@ const Sidebar = () => {
     }
   }, []);
 
-  // Listen for logout events from other tabs
-  useEffect(() => {
-    // Check if there's already a logout event (in case tab was inactive)
-    const logoutEvent = localStorage.getItem("logoutEvent");
-    if (logoutEvent) {
-      dispatch(logout());
-      localStorage.clear();
-      router("/auth/login");
-      return;
-    }
-
-    const handleStorageChange = (e) => {
-      if (e.key === "logoutEvent") {
-        // Logout event detected from another tab
-        dispatch(logout());
-        localStorage.clear();
-        router("/auth/login");
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, [dispatch, router]);
-
   useEffect(() => {
     const activeSubMenuIndex = menuDatas.findIndex((item) =>
       item.subLinks?.some(
