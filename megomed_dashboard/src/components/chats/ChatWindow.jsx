@@ -78,6 +78,8 @@ export default function MessageInterface() {
 
   const [localMessages, setLocalMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [forceRender, setForceRender] = useState(0); // Force re-render counter
+  const [processedMessageIds, setProcessedMessageIds] = useState(new Set()); // Track processed messages
   const messagesEndRef = useRef(null);
 
   // Scroll to bottom function (since newest messages are at the bottom)
@@ -88,7 +90,8 @@ export default function MessageInterface() {
   // Clear local messages when chat ID changes
   useEffect(() => {
     setLocalMessages([]);
-    console.log("Cleared local messages for new chat:", id);
+    setProcessedMessageIds(new Set());
+    console.log("Cleared local messages and processed IDs for new chat:", id);
   }, [id]);
 
   // Socket.IO real-time message listener - ONLY for the current chat
@@ -105,7 +108,15 @@ export default function MessageInterface() {
         return;
       }
 
-      console.log(`Socket: Received new message for chat ${id}`);
+      console.log(`Socket: Received new message for chat ${id}:`, messageData);
+
+      // Check if we've already processed this message
+      const messageId =
+        messageData._id || `socket-${Date.now()}-${Math.random()}`;
+      if (processedMessageIds.has(messageId)) {
+        console.log(`Socket: Message ${messageId} already processed, skipping`);
+        return;
+      }
 
       // Format time for the new message
       const formatTime = (dateString) => {
@@ -128,7 +139,7 @@ export default function MessageInterface() {
       const isFromCurrentUser = messageData.sender === currentUserId;
 
       const newMessage = {
-        id: messageData._id,
+        id: messageId, // Use the tracked message ID
         text:
           messageData.message || (messageData.image ? "Image" : "No message"),
         sender: isFromCurrentUser ? "me" : "them",
@@ -139,18 +150,43 @@ export default function MessageInterface() {
         senderId: messageData.sender,
         isRealtime: true, // Mark as real-time message
         originalCreatedAt: messageData.createdAt, // Store original timestamp for sorting
-        createdAt: messageData.createdAt,
+        createdAt: messageData.createdAt || new Date().toISOString(),
       };
 
-      // Ensure the message has a valid timestamp for sorting
-      if (!messageData.createdAt) {
-        messageData.createdAt = new Date().toISOString();
-      }
+      console.log(`Socket: Adding new message to local state:`, newMessage);
 
-      // Add the new message to local messages
+      // Add the new message to local messages with immediate state update
       setLocalMessages((prev) => {
-        // Always add to the end, the sorting will happen in allMessages
+        // Check if message already exists to prevent duplicates
+        const exists = prev.some((msg) => msg.id === newMessage.id);
+        if (exists) {
+          console.log(
+            `Socket: Message ${newMessage.id} already exists, skipping`
+          );
+          return prev;
+        }
+
+        // Also check if this message exists in the API messages to avoid duplicates
+        const existsInApi = messages.some((msg) => msg.id === newMessage.id);
+        if (existsInApi) {
+          console.log(
+            `Socket: Message ${newMessage.id} already exists in API data, skipping`
+          );
+          return prev;
+        }
+
+        console.log(
+          `Socket: Adding message to local state, previous count: ${prev.length}`
+        );
         const updated = [...prev, newMessage];
+        console.log(`Socket: New local messages count: ${updated.length}`);
+
+        // Mark this message as processed
+        setProcessedMessageIds((prev) => new Set([...prev, messageId]));
+
+        // Force re-render for immediate UI update
+        setForceRender((prev) => prev + 1);
+
         return updated;
       });
     };
@@ -160,10 +196,19 @@ export default function MessageInterface() {
 
     // Cleanup listener on unmount or when chat ID changes
     return () => {
+      console.log(`Socket: Cleaning up listener for ${eventName}`);
       off(eventName, handleNewMessage);
     };
-  }, [socket, id, isConnected, currentUserId]);
-  // Note: 'on' and 'off' are stable functions from the socket context and don't need to be dependencies
+  }, [
+    socket,
+    id,
+    isConnected,
+    currentUserId,
+    on,
+    off,
+    messages,
+    processedMessageIds,
+  ]);
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
@@ -195,12 +240,15 @@ export default function MessageInterface() {
     return 0;
   };
 
-  // Merge, de-duplicate by id (prefer API data), then sort chronologically
+  // Merge, de-duplicate by id (prefer real-time data), then sort chronologically
   const mergedMessages = [...messages, ...localMessages];
   const seenIds = new Set();
   const dedupedMessages = mergedMessages.filter((msg) => {
     if (!msg?.id) return true;
-    if (seenIds.has(msg.id)) return false;
+    if (seenIds.has(msg.id)) {
+      // Skip duplicate - we've already seen this message
+      return false;
+    }
     seenIds.add(msg.id);
     return true;
   });
@@ -209,15 +257,26 @@ export default function MessageInterface() {
     return getMessageTimestamp(a) - getMessageTimestamp(b); // Ascending order (oldest first, newest last)
   });
 
+  // Debug logging for message updates
+  console.log(
+    `Messages update: API=${messages.length}, Local=${localMessages.length}, Total=${allMessages.length}`
+  );
+
   // Scroll to bottom when messages change (since newest messages are at the bottom)
   useEffect(() => {
-    // Use a slightly longer timeout to ensure DOM has fully updated and messages are sorted
+    // Immediate scroll for real-time messages, slight delay for others
+    const hasRealtimeMessages = allMessages.some((msg) => msg.isRealtime);
+    const timeout = hasRealtimeMessages ? 0 : 100; // Immediate for real-time, slight delay for others
+
     const timeoutId = setTimeout(() => {
       scrollToBottom();
-      console.log("Scrolling to bottom after messages update");
-    }, 100); // Slightly longer timeout to ensure rendering completes
+      console.log(
+        `Scrolling to bottom after messages update (realtime: ${hasRealtimeMessages})`
+      );
+    }, timeout);
+
     return () => clearTimeout(timeoutId);
-  }, [allMessages.length]); // Only depend on the length, not the entire array
+  }, [allMessages.length, allMessages, forceRender]); // Depend on length, content, and force render for real-time updates
 
   // Fallback test messages if no API data
   const testMessages = [
@@ -317,7 +376,7 @@ export default function MessageInterface() {
                       message.sender === "me"
                         ? "bg-blue-500 text-white rounded-br-md"
                         : "bg-white text-gray-800 border border-gray-200 rounded-bl-md"
-                    } ${message.isRealtime ? "ring-2 ring-green-300" : ""}`}
+                    }`}
                   >
                     {message.image ? (
                       <div className="max-w-xs">
