@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useGetChatMessagesbyChatIdQuery } from "../../features/supportChat/supportChatApi";
 import { getImageUrl } from "../../utils/getImageUrl";
@@ -41,40 +41,43 @@ export default function MessageInterface() {
     console.error("Error fetching chat messages:", error);
   }
 
-  const messages =
-    chatMessagesResponse?.data?.resultAll?.map((message) => {
-      // Format time
-      const formatTime = (dateString) => {
-        const now = new Date();
-        const messageTime = new Date(dateString);
-        const diffInMinutes = Math.floor((now - messageTime) / (1000 * 60));
+  const messages = useMemo(() => {
+    return (
+      chatMessagesResponse?.data?.resultAll?.map((message) => {
+        // Format time
+        const formatTime = (dateString) => {
+          const now = new Date();
+          const messageTime = new Date(dateString);
+          const diffInMinutes = Math.floor((now - messageTime) / (1000 * 60));
 
-        if (diffInMinutes < 1) {
-          return "just now";
-        } else if (diffInMinutes < 60) {
-          return `${diffInMinutes} min ago`;
-        } else if (diffInMinutes < 1440) {
-          return `${Math.floor(diffInMinutes / 60)} hr ago`;
-        } else {
-          return `${Math.floor(diffInMinutes / 1440)} day ago`;
-        }
-      };
+          if (diffInMinutes < 1) {
+            return "just now";
+          } else if (diffInMinutes < 60) {
+            return `${diffInMinutes} min ago`;
+          } else if (diffInMinutes < 1440) {
+            return `${Math.floor(diffInMinutes / 60)} hr ago`;
+          } else {
+            return `${Math.floor(diffInMinutes / 1440)} day ago`;
+          }
+        };
 
-      // Determine if this message is from the current user
-      const isFromCurrentUser = message.sender === currentUserId;
+        // Determine if this message is from the current user
+        const isFromCurrentUser = message.sender === currentUserId;
 
-      return {
-        id: message._id,
-        text: message.message || (message.image ? "Image" : "No message"),
-        sender: isFromCurrentUser ? "me" : "them",
-        time: formatTime(message.createdAt),
-        avatar: "👤",
-        image: message.image,
-        seen: message.seen,
-        senderId: message.sender, // Keep original sender ID for debugging
-        createdAt: message.createdAt,
-      };
-    }) || [];
+        return {
+          id: message._id,
+          text: message.message || (message.image ? "Image" : "No message"),
+          sender: isFromCurrentUser ? "me" : "them",
+          time: formatTime(message.createdAt),
+          avatar: "👤",
+          image: message.image,
+          seen: message.seen,
+          senderId: message.sender, // Keep original sender ID for debugging
+          createdAt: message.createdAt,
+        };
+      }) || []
+    );
+  }, [chatMessagesResponse?.data?.resultAll, currentUserId]);
 
   const [localMessages, setLocalMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
