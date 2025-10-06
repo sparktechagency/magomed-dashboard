@@ -240,7 +240,7 @@ const Navber = () => {
             />
           </div>
           <h3 className="font-bold text-base sm:text-lg leading-6 pb-2">
-            There's no notifications
+            There&apos;s no notifications
           </h3>
           <p className="pb-4 text-sm sm:text-base">
             Your notifications will appear on this page.
@@ -283,23 +283,6 @@ const Navber = () => {
               >
                 {notif.text}
               </p>
-              <div className="flex items-center justify-between mt-1">
-                {notif.read ? (
-                  <div className="flex items-center text-xs text-gray-500">
-                    <CheckCircleOutlined className="mr-1" /> Read
-                  </div>
-                ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMarkAsRead(notif._id, e);
-                    }}
-                    className="ml-auto text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300"
-                  >
-                    Mark as Read
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         ))
@@ -398,16 +381,13 @@ const Navber = () => {
               title="Notifications"
               className="p-0"
               extra={
-                unreadCount > 0 && (
-                  <Button
-                    size="small"
-                    type="link"
-                    onClick={markAllAsRead}
-                    loading={updateAllLoading}
-                  >
-                    Mark all as read
-                  </Button>
-                )
+                <Button
+                  size="small"
+                  type="link"
+                  onClick={handleSeeDetailsClick}
+                >
+                  See All
+                </Button>
               }
             >
               <NotificationContent />
@@ -471,7 +451,7 @@ const Navber = () => {
       </Drawer>
 
       {/* Custom CSS for responsive design */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
